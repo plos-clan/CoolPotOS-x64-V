@@ -1,6 +1,6 @@
 module serial
 
-import arch.io { port_in, port_out }
+import arch.cpu { port_in, port_out }
 
 const serial_port = u16(0x3f8)
 
