@@ -14,10 +14,6 @@ __global (
 	framebuffer &limine.Framebuffer
 )
 
-pub fn get_framebuffer() &limine.Framebuffer {
-	return framebuffer
-}
-
 pub fn init() {
 	if framebuffer_request.response == unsafe { nil } {
 		for {}
