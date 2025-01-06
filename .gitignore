@@ -1,0 +1,8 @@
+# Build cache
+build/
+
+# Ignore common editor/system specific metadata
+.DS_Store
+.idea/
+.vscode/
+*.iml
