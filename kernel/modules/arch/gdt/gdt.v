@@ -8,14 +8,14 @@ __global (
 	user_code_seg   = u16(0x23)
 	user_data_seg   = u16(0x1b)
 	tss_segment     = u16(0x28)
-	gdt_pointer     GDTRegister
+	gdt_pointer     GDTPointer
 	gdt_entries     [7]u64
 	tss             TaskStateSegment
 	tss_stack       [1024]u8
 )
 
 @[packed]
-struct GDTRegister {
+struct GDTPointer {
 	size    u16
 	address voidptr
 }
@@ -44,7 +44,7 @@ pub fn load_gdt() {
 	gdt_entries[3] = 0x00c0f20000000000 // User data
 	gdt_entries[4] = 0x00a0fa0000000000 // User code
 
-	gdt_pointer = GDTRegister{
+	gdt_pointer = GDTPointer{
 		size:    u16(sizeof(gdt_entries) - 1)
 		address: &gdt_entries
 	}
@@ -52,9 +52,10 @@ pub fn load_gdt() {
 	asm volatile amd64 {
 		lgdt ptr
 		push cseg
-		lea rax, [rip + 0x3]
+		lea rax, f1
 		push rax
 		lretq
+		1:
 		mov ds, dseg
 		mov fs, dseg
 		mov gs, dseg
@@ -71,8 +72,6 @@ pub fn load_gdt() {
 
 pub fn load_tss() {
 	address := u64(&tss)
-
-	log.debug(c'TSS address: %#p\n', voidptr(address))
 
 	low_base := (address & 0xffffff) << 16
 	mid_base := ((address >> 24) & 0xff) << 56
@@ -91,6 +90,4 @@ pub fn load_tss() {
 		; ; rm (tss_segment) as offset
 		; memory
 	}
-
-	log.info(c'Task State Segment loaded!\n')
 }

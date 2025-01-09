@@ -1,7 +1,14 @@
 module idt
 
+import log
+
+__global (
+	idt_pointer IDTPointer
+	idt_entries [256]IDTEntry
+)
+
 @[packed]
-struct IDTRegister {
+struct IDTPointer {
 	size    u16
 	address voidptr
 }
@@ -18,13 +25,36 @@ pub mut:
 	reserved   u32
 }
 
-__global (
-	idt_pointer     IDTRegister
-	idt_entries     [256]IDTEntry
-)
+@[packed]
+struct InterruptFrame {
+    rip    u64
+	cs     u64
+	rflags u64
+	rsp    u64
+	ss     u64
+}
+
+fn (frame InterruptFrame) debug() {
+	log.debug(c'Interrupt frame: RIP: %#p CS: %#p\n', frame.rip, frame.cs)
+	log.print(c'RFLAGS: %#p RSP: %#p SS: %#p\n', frame.rflags, frame.rsp, frame.ss)
+}
+
+fn register_handler(vector u16, handler voidptr, ist u8, flags u8) {
+	address := u64(handler)
+
+	idt_entries[vector] = IDTEntry{
+		offset_low: u16(address)
+		selector:   kernel_code_seg
+		ist:        ist & 0b111
+		flags:      flags
+		offset_mid: u16(address >> 16)
+		offset_hi:  u32(address >> 32)
+		reserved:   0
+	}
+}
 
 pub fn init() {
-	idt_pointer = IDTRegister{
+	idt_pointer = IDTPointer{
 		size:    u16((sizeof(IDTEntry) * 256) - 1)
 		address: &idt_entries
 	}
@@ -41,18 +71,6 @@ pub fn init() {
 	register_handler(11, segment_not_present, 0, 0x8e)
 	register_handler(13, general_protection_fault, 0, 0x8e)
 	register_handler(14, page_fault, 0, 0x8e)
-}
 
-pub fn register_handler(vector u16, handler voidptr, ist u8, flags u8) {
-	address := u64(handler)
-
-	idt_entries[vector] = IDTEntry{
-		offset_low: u16(address)
-		selector:   kernel_code_seg
-		ist:        ist
-		flags:      flags
-		offset_mid: u16(address >> 16)
-		offset_hi:  u32(address >> 32)
-		reserved:   0
-	}
+	log.info(c'Interrupt Descriptor Table loaded!\n')
 }
