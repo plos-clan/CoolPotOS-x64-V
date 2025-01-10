@@ -70,7 +70,7 @@ mut:
 	l4_table &PageTable
 }
 
-fn (table PageMapper) translate(addr u64) u64 {
+pub fn (table PageMapper) translate(addr u64) u64 {
 	l4_index := (addr >> 39) & 0x1FF
 	l3_index := (addr >> 30) & 0x1FF
 	l2_index := (addr >> 21) & 0x1FF
@@ -103,7 +103,7 @@ fn (table PageMapper) translate(addr u64) u64 {
 	return l1_table.entries[l1_index].addr() | (addr & 0xfff)
 }
 
-fn (table PageMapper) map_to(addr u64, frame u64, flags u64) ? {
+pub fn (table PageMapper) map_to(addr u64, frame u64, flags u64) ? {
 	l4_index := (addr >> 39) & 0x1FF
 	l3_index := (addr >> 30) & 0x1FF
 	l2_index := (addr >> 21) & 0x1FF
@@ -118,7 +118,7 @@ fn (table PageMapper) map_to(addr u64, frame u64, flags u64) ? {
 	cpu.invlpg(addr)
 }
 
-fn (table PageMapper) unmap(addr u64) ? {
+pub fn (table PageMapper) unmap(addr u64) ? {
 	l4_index := (addr >> 39) & 0x1FF
 	l3_index := (addr >> 30) & 0x1FF
 	l2_index := (addr >> 21) & 0x1FF
