@@ -25,20 +25,6 @@ pub mut:
 	reserved   u32
 }
 
-@[packed]
-struct InterruptFrame {
-    rip    u64
-	cs     u64
-	rflags u64
-	rsp    u64
-	ss     u64
-}
-
-fn (frame InterruptFrame) debug() {
-	log.debug(c'Interrupt frame: RIP: %#p CS: %#p\n', frame.rip, frame.cs)
-	log.print(c'RFLAGS: %#p RSP: %#p SS: %#p\n', frame.rflags, frame.rsp, frame.ss)
-}
-
 fn register_handler(vector u16, handler voidptr, ist u8, flags u8) {
 	address := u64(handler)
 
@@ -73,4 +59,19 @@ pub fn init() {
 	register_handler(14, page_fault, 0, 0x8e)
 
 	log.info(c'Interrupt Descriptor Table loaded!\n')
+}
+
+@[packed]
+struct InterruptFrame {
+	rip    u64
+	cs     u64
+	rflags u64
+	rsp    u64
+	ss     u64
+}
+
+fn (frame InterruptFrame) debug() {
+	log.debug(c'Interrupt frame:\n')
+	log.print(c'CS: %#x SS: %#x RFLAGS: %#x\n', frame.cs, frame.ss, frame.rflags)
+	log.print(c'RIP: %#p RSP: %#p\n', frame.rip, frame.rsp)
 }

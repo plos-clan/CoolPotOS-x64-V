@@ -24,8 +24,8 @@ mut:
 
 pub fn init_frame() {
 	memory_map := memmap_request.response
-	mut memory_size := u64(0)
 
+	mut memory_size := u64(0)
 	for i := memory_map.entry_count - 1; i >= 0; i-- {
 		region := unsafe { memory_map.entries[i] }
 		if region.@type == 0 {
@@ -35,16 +35,15 @@ pub fn init_frame() {
 	}
 
 	bitmap_size := (memory_size / 4096 + 7) / 8
-	mut bitmap_address := u64(-1)
 
+	mut bitmap_address := u64(-1)
 	for i := 0; i < memory_map.entry_count; i++ {
 		region := unsafe { memory_map.entries[i] }
 		if region.@type == 0 && region.length >= bitmap_size {
 			bitmap_address = region.base
+			break
 		}
 	}
-
-	log.debug(c'Bitmap address: %#p\n', voidptr(bitmap_address))
 
 	if bitmap_address == u64(-1) {
 		return
@@ -76,13 +75,9 @@ pub fn init_frame() {
 	log.info(c'Available memory: %lld MiB\n', voidptr(origin_frames / 256))
 }
 
-fn alloc_frames(count usize) usize {
+pub fn alloc_frames(count usize) ?usize {
 	mut bitmap := &frame_allocator.bitmap
-	frame_index := bitmap.find_range(count, true)
-
-	if frame_index == usize(-1) {
-		return 0
-	}
+	frame_index := bitmap.find_range(count, true)?
 
 	bitmap.set_range(frame_index, frame_index + count, false)
 	frame_allocator.usable_frames -= count

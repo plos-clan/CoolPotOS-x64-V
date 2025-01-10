@@ -18,7 +18,7 @@ LDFLAGS = -nostdlib -static -gc-sections -T assets/linker.ld
 LDFLAGS += -Llibs -los_terminal -lalloc
 
 XORRISOFLAGS = -as mkisofs --efi-boot limine-uefi-cd.bin
-QEMUFLAGS = -M q35 -cpu qemu64,+x2apic -no-reboot -serial stdio
+QEMUFLAGS = -M q35 -cpu qemu64,+x2apic -no-reboot -serial stdio -enable-kvm
 QEMUFLAGS += -drive if=pflash,format=raw,file=assets/ovmf-code.fd
 
 .PHONY: default setup kernel image clean

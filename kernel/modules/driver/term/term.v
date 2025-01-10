@@ -1,5 +1,11 @@
 module term
 
+// import mem.heap as _
+
+fn C.heap_init(address &u8, size usize) bool
+fn C.malloc(size usize) voidptr
+fn C.free(voidptr)
+
 __global (
 	term_init = false
 )

@@ -2,12 +2,12 @@ module main
 
 import limine
 import mem
-import arch.cpu
-import arch.gdt
-import arch.idt
 import driver.gop
 import driver.serial
 import driver.term
+import arch.cpu
+import arch.gdt
+import arch.idt
 
 @[_linker_section: '.requests']
 @[cinit]
@@ -24,14 +24,15 @@ pub fn main() {
 
 	gop.init()
 	serial.init()
+	gdt.init()
+	idt.init()
 
 	mem.init_hhdm()
 	mem.init_frame()
+	mem.init_paging()
 	mem.init_heap()
 
 	term.init()
-	gdt.init()
-	idt.init()
 
 	for {
 		cpu.hlt()

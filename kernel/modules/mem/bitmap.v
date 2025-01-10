@@ -69,7 +69,7 @@ pub fn (mut bitmap Bitmap) set_range(start usize, end usize, value bool) {
 	}
 }
 
-pub fn (bitmap Bitmap) find_range(length usize, value bool) usize {
+pub fn (bitmap Bitmap) find_range(length usize, value bool) ?usize {
 	mut count := usize(0)
 	mut start_index := usize(0)
 
@@ -108,5 +108,5 @@ pub fn (bitmap Bitmap) find_range(length usize, value bool) usize {
 			}
 		}
 	}
-	return usize(-1)
+	return none
 }
