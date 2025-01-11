@@ -25,6 +25,13 @@ pub mut:
 	reserved   u32
 }
 
+pub enum InterruptIndex {
+	timer = 32
+	keyboard
+	mouse
+	hpet_timer
+}
+
 fn register_handler(vector u16, handler voidptr, ist u8, flags u8) {
 	address := u64(handler)
 
@@ -57,6 +64,7 @@ pub fn init() {
 	register_handler(11, segment_not_present, 0, 0x8e)
 	register_handler(13, general_protection_fault, 0, 0x8e)
 	register_handler(14, page_fault, 0, 0x8e)
+	register_handler(u16(InterruptIndex.timer), timer, 0, 0x8e)
 
 	log.info(c'Interrupt Descriptor Table loaded!\n')
 }

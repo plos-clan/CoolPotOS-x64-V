@@ -19,3 +19,23 @@ pub fn port_out[T](port u16, value T) {
 		; memory
 	}
 }
+
+pub fn mmio_in[T](addr &T) T {
+	mut ret := T(0)
+	asm volatile amd64 {
+		mov ret, [addr]
+		; =r (ret)
+		; r (addr)
+		; memory
+	}
+	return ret
+}
+
+pub fn mmio_out[T](addr &T, value T) {
+	asm volatile amd64 {
+		mov [addr], value
+		; ; r (addr)
+		  r (value)
+		; memory
+	}
+}

@@ -476,7 +476,7 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
       case 'E':              // float
       case 'e':              // float
       case 'f':              // float
-         va_arg(va, double);    // eat it
+         va_arg(va, double); // eat it
          s = (char *)"No float";
          l = 8;
          lead[0] = 0;

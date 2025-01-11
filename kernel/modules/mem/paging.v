@@ -154,10 +154,10 @@ pub fn (mapper PageMapper) alloc_range(start u64, length u64, flags u64) {
 	}
 }
 
-pub fn (mapper PageMapper) map_range_to(start u64, start_frame u64, length u64, flags u64) {
+pub fn (mapper PageMapper) map_range_to(frame u64, length u64, flags u64) {
 	for offset := u64(0); offset < length; offset += 0x1000 {
-		frame := start_frame + offset
-		mapper.map_to(start + offset, frame, flags)
+		virt_addr := phys_to_virt(frame + offset)
+		mapper.map_to(virt_addr, frame + offset, flags)
 	}
 }
 

@@ -4,6 +4,12 @@ import cpu
 import log
 
 @[irq_handler]
+fn timer(frame &InterruptFrame) {
+	log.debug(c'Timer interrupt!\n')
+	lapic.eoi()
+}
+
+@[irq_handler]
 fn devide_by_zero(frame &InterruptFrame) {
 	log.error(c'Divide by zero exception!\n')
 	cpu.hlt()

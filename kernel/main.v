@@ -3,11 +3,14 @@ module main
 import limine
 import mem
 import driver.gop
+import driver.hpet
 import driver.serial
 import driver.term
 import arch.cpu
 import arch.gdt
 import arch.idt
+import arch.acpi
+import arch.apic
 
 @[_linker_section: '.requests']
 @[cinit]
@@ -33,6 +36,9 @@ pub fn main() {
 	mem.init_heap()
 
 	term.init()
+	acpi.init()
+	hpet.init()
+	apic.init()
 
 	for {
 		cpu.hlt()
