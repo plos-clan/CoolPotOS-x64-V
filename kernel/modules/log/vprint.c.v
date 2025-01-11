@@ -1,7 +1,6 @@
 module log
 
 import driver.serial
-import driver.term
 
 #include "krlibc.c"
 
@@ -26,6 +25,6 @@ pub fn vprint(fmt voidptr, ap C.va_list) {
 		serial.write(&buf[0])
 	}
 	if term_init {
-		term.process(&buf[0])
+		C.terminal_process(&buf[0])
 	}
 }

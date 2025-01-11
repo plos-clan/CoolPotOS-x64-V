@@ -133,20 +133,6 @@ pub fn (table PageMapper) unmap(addr u64) ? {
 	cpu.invlpg(addr)
 }
 
-pub enum MappingType {
-	user_code
-	kernel_data
-	user_data
-}
-
-pub fn (@type MappingType) flags() u64 {
-	match @type {
-		.user_code { return pte_present | pte_writable | pte_user }
-		.kernel_data { return pte_present | pte_writable | pte_no_execute }
-		.user_data { return pte_present | pte_writable | pte_user | pte_no_execute }
-	}
-}
-
 pub fn (mapper PageMapper) alloc_range(start u64, length u64, flags u64) {
 	for addr := start; addr <= start + length - 1; addr += 0x1000 {
 		frame := alloc_frames(1) or { 0 }
@@ -165,4 +151,18 @@ pub fn init_paging() {
 	l4_table_frame := cpu.read_cr3()
 	mut l4_table := &PageTable(phys_to_virt(l4_table_frame))
 	kernel_page_table = PageMapper{l4_table}
+}
+
+pub enum MappingType {
+	user_code
+	kernel_data
+	user_data
+}
+
+pub fn (@type MappingType) flags() u64 {
+	match @type {
+		.user_code { return pte_present | pte_writable | pte_user }
+		.kernel_data { return pte_present | pte_writable | pte_no_execute }
+		.user_data { return pte_present | pte_writable | pte_user | pte_no_execute }
+	}
 }

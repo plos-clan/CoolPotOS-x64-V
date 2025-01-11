@@ -16,6 +16,7 @@ struct C.TerminalDisplay {
 
 fn C.terminal_init(&C.TerminalDisplay, f32, fn (usize), fn (voidptr), voidptr)
 fn C.terminal_process(s &char)
+fn C.terminal_handle_keyboard(scancode u8) &char
 
 pub fn init() {
 	display := C.TerminalDisplay{
@@ -26,8 +27,4 @@ pub fn init() {
 
 	C.terminal_init(&display, 10.0, C.malloc, C.free, 0)
 	term_init = true
-}
-
-pub fn process(s &char) {
-	C.terminal_process(s)
 }

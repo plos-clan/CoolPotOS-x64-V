@@ -69,16 +69,16 @@ fn (mut self Lapic) init() {
 	}
 
 	self.write(lapic_reg_timer, u64(idt.InterruptIndex.timer))
-	self.write(lapic_reg_spurious, 0xff)
+	self.write(lapic_reg_spurious, 0xff | 1 << 8)
 	self.write(lapic_reg_timer_div, 0b1011)
 	self.write(lapic_reg_timer_initcnt, 0)
 
 	begin_time := hpet.elapsed()
 	self.write(lapic_reg_timer_initcnt, ~u32(0))
-	for hpet.elapsed() - begin_time < 10 * 1000000 {}
+	for hpet.elapsed() - begin_time < 1000000 {}
 	lapic_ticks := ~u32(0) - self.read(lapic_reg_timer_curcnt)
 
-	calibrated_timer_initial := lapic_ticks * 1000 / 10 / lapic_timer_freq_hz
+	calibrated_timer_initial := lapic_ticks * 1000 / lapic_timer_freq_hz
 	log.info(c'Calibrated LAPIC timer: %d ticks per second\n', calibrated_timer_initial)
 
 	self.write(lapic_reg_timer, self.read(lapic_reg_timer) | 1 << 17)
