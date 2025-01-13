@@ -24,8 +24,13 @@ pub fn (self Hpet) elapsed() u64 {
 	return self.ticks() * hpet.fms_per_tick / 1_000_000
 }
 
-pub fn (self Hpet) estimate(duration u64) u64 {
-	return self.ticks() + duration * 1_000_000 / self.fms_per_tick
+pub fn (self Hpet) estimate(ns u64) u64 {
+	return self.ticks() + ns * 1_000_000 / self.fms_per_tick
+}
+
+pub fn (self Hpet) busy_wait(ns u64) {
+	end := self.estimate(ns)
+	for self.ticks() < end {}
 }
 
 pub fn (self Hpet) set_timer(value u64) {

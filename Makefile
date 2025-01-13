@@ -21,6 +21,7 @@ LDFLAGS += -Llibs -los_terminal -lalloc
 XORRISOFLAGS = -as mkisofs --efi-boot limine-uefi-cd.bin
 QEMUFLAGS = -M q35 -cpu qemu64,+x2apic -no-reboot -serial stdio -enable-kvm
 QEMUFLAGS += -drive if=pflash,format=raw,file=assets/ovmf-code.fd
+QEMUFLAGS += -audiodev pa,id=snd -machine pcspk-audiodev=snd
 
 .PHONY: default setup kernel image clean
 

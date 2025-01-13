@@ -15,15 +15,13 @@ fn C.terminal_process_char(ch char)
 fn C.terminal_flush()
 fn C.terminal_set_auto_crnl(bool)
 fn C.terminal_set_auto_flush(bool)
+fn C.terminal_set_bell_handler(fn ())
 fn C.terminal_handle_keyboard(scancode u8) &char
 
 fn handle_keyboard(sc u8) {
 	res := C.terminal_handle_keyboard(sc)
-	if res == 0 {
-		return
-	}
 	unsafe {
-		for i := 0; res[i]; i++ {
+		for i := 0; res != 0 && res[i] != 0; i++ {
 			term_buffer.push(res[i])
 		}
 	}

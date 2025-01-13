@@ -7,12 +7,14 @@ import driver.term
 @[irq_handler]
 fn devide_by_zero(frame &InterruptFrame) {
 	log.error(c'Divide by zero!\n')
+	frame.debug()
 	cpu.hlt()
 }
 
 @[irq_handler]
 fn invalid_opcode(frame &InterruptFrame) {
 	log.error(c'Invalid opcode!\n')
+	frame.debug()
 	cpu.hlt()
 }
 

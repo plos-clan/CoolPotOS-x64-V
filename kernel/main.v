@@ -35,9 +35,9 @@ pub fn main() {
 	mem.init_paging()
 	mem.init_heap()
 
-	term.init()
 	acpi.init()
 	hpet.init()
+	term.init()
 	apic.init()
 
 	for {

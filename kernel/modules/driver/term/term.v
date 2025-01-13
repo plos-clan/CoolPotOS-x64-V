@@ -1,5 +1,6 @@
 module term
 
+import beep
 import sync { Queue }
 
 __global (
@@ -31,11 +32,12 @@ pub fn init() {
 	height := framebuffer.height
 	address := framebuffer.address
 
-	ksc_queue = sync.Queue.new[u8](1024)
-	term_buffer = sync.Queue.new[char](1024)
-
 	display := C.TerminalDisplay{width, height, address}
 	C.terminal_init(&display, 10.0, C.malloc, C.free, 0)
 	C.terminal_set_auto_crnl(true)
 	C.terminal_set_auto_flush(false)
+	C.terminal_set_bell_handler(fn () {beep.play(750, 100)})
+
+	ksc_queue = sync.Queue.new[u8](1024)
+	term_buffer = sync.Queue.new[char](1024)
 }
