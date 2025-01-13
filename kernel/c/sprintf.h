@@ -104,12 +104,6 @@ STBSP__PUBLICDEC void STB_SPRINTF_DECORATE(set_separators)(char comma, char peri
 #endif
 #endif
 
-#ifdef STB_SPRINTF_NOUNALIGNED // define this before inclusion to force stbsp_sprintf to always use aligned accesses
-#define STBSP__UNALIGNED(code)
-#else
-#define STBSP__UNALIGNED(code) code
-#endif
-
 static char stbsp__period = '.';
 static char stbsp__comma = ',';
 static struct
@@ -269,14 +263,6 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
             if (callback)
                if ((STB_SPRINTF_MIN - (int)(bf - buf)) < 4)
                   goto schk1;
-            #ifdef STB_SPRINTF_NOUNALIGNED
-                if(((stbsp__uintptr)bf) & 3) {
-                    bf[0] = f[0];
-                    bf[1] = f[1];
-                    bf[2] = f[2];
-                    bf[3] = f[3];
-                } else
-            #endif
             {
                 *(stbsp__uint32 *)bf = v;
             }
@@ -754,12 +740,12 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
             stbsp__int32 i;
             stbsp__cb_buf_clamp(i, n);
             n -= i;
-            STBSP__UNALIGNED(while (i >= 4) {
+            while (i >= 4) {
                *(stbsp__uint32 volatile *)bf = *(stbsp__uint32 volatile *)s;
                bf += 4;
                s += 4;
                i -= 4;
-            })
+            }
             while (i) {
                *bf++ = *s++;
                --i;
@@ -869,9 +855,6 @@ done:
 #undef stbsp__flush_cb
 #undef stbsp__cb_buf_clamp
 
-// ============================================================================
-//   wrapper functions
-
 STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(sprintf)(char *buf, char const *fmt, ...)
 {
    int result;
@@ -979,6 +962,5 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintf)(char *buf, char const *fmt, 
 #undef stbsp__int32
 #undef stbsp__uint64
 #undef stbsp__int64
-#undef STBSP__UNALIGNED
 
 #endif // STB_SPRINTF_IMPLEMENTATION

@@ -47,22 +47,18 @@ fn (entry PageTableEntry) table() ?&PageTable {
 	if entry.value == 0 {
 		return none
 	}
-
 	addr := phys_to_virt(entry.addr())
 	return &PageTable(addr)
 }
 
 fn (mut entry PageTableEntry) create() ?&PageTable {
-	if page_table := entry.table() {
-		return page_table
+	return entry.table() or {
+		frame := alloc_frames(1)?
+		entry.set(u64(frame), pte_parent_flags)
+		mut table := entry.table()?
+		table.clear()
+		return table
 	}
-
-	frame := alloc_frames(1)?
-	entry.set(u64(frame), pte_parent_flags)
-
-	mut new_table := entry.table()?
-	new_table.clear()
-	return new_table
 }
 
 struct PageMapper {
@@ -70,7 +66,7 @@ mut:
 	l4_table &PageTable
 }
 
-pub fn (table PageMapper) translate(addr u64) u64 {
+pub fn (table PageMapper) translate(addr u64) ?u64 {
 	l4_index := (addr >> 39) & 0x1FF
 	l3_index := (addr >> 30) & 0x1FF
 	l2_index := (addr >> 21) & 0x1FF
@@ -78,26 +74,26 @@ pub fn (table PageMapper) translate(addr u64) u64 {
 
 	l4_table := table.l4_table
 	if table.l4_table.entries[l4_index].huge() {
-		return 0
+		return none
 	}
 
-	l3_table := l4_table.entries[l4_index].table() or { return 0 }
+	l3_table := l4_table.entries[l4_index].table()?
 	if l3_table.entries[l3_index].value == 0 {
 		frame := l3_table.entries[l3_index].addr() & ~0x3fffffff
 		offset := addr & 0x3fffffff
 		return frame | offset
 	}
 
-	l2_table := l3_table.entries[l3_index].table() or { return 0 }
+	l2_table := l3_table.entries[l3_index].table()?
 	if l2_table.entries[l2_index].huge() {
 		frame := l2_table.entries[l2_index].addr() & ~0x1fffff
 		offset := addr & 0x1fffff
 		return frame | offset
 	}
 
-	l1_table := l2_table.entries[l2_index].table() or { return 0 }
+	l1_table := l2_table.entries[l2_index].table()?
 	if l1_table.entries[l1_index].value == 0 {
-		return 0
+		return none
 	}
 
 	return l1_table.entries[l1_index].addr() | (addr & 0xfff)

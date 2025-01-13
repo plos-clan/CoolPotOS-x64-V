@@ -12,7 +12,8 @@ endif
 CFLAGS = -w -m64 -O3 -I./kernel/c -Ilibs -g
 CFLAGS += -ffunction-sections -fdata-sections -fno-stack-protector
 CFLAGS += -mno-80387 -mno-mmx -mno-sse -mno-sse2 -mno-red-zone
-VFLAGS = -manualfree -gc none -enable-globals -nofloat -d no_backtrace
+VFLAGS = -manualfree -gc none -enable-globals -no-parallel
+VFLAGS += -nofloat -d no_backtrace -no-bounds-checking -os vinix
 
 LDFLAGS = -nostdlib -static -gc-sections -T assets/linker.ld
 LDFLAGS += -Llibs -los_terminal -lalloc

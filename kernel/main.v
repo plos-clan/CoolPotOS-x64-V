@@ -1,16 +1,16 @@
 module main
 
-import limine
-import mem
+import arch.acpi
+import arch.apic
+import arch.cpu
+import arch.gdt
+import arch.idt
 import driver.gop
 import driver.hpet
 import driver.serial
 import driver.term
-import arch.cpu
-import arch.gdt
-import arch.idt
-import arch.acpi
-import arch.apic
+import limine
+import mem
 
 @[_linker_section: '.requests']
 @[cinit]

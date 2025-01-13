@@ -29,9 +29,7 @@ fn (self IoApic) write(reg u32, value u32) {
 
 fn (self IoApic) add_entry(vector u8, irq u32) {
 	ioredtbl := ioapic_reg_table_base + irq * 2
-
-	mut redirect := u64(vector)
-	redirect |= lapic.id() << 56
+	redirect := u64(vector) | lapic.id() << 56
 
 	self.write(ioredtbl, u32(redirect))
 	self.write(ioredtbl + 1, u32(redirect >> 32))

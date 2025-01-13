@@ -24,7 +24,8 @@ pub fn vprint(fmt voidptr, ap C.va_list) {
 	$if !prod {
 		serial.write(&buf[0])
 	}
-	if term_init {
-		C.terminal_process(&buf[0])
+
+	for i := 0; buf[i]; i++ {
+		term_buffer.push(buf[i])
 	}
 }

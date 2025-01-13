@@ -2,10 +2,11 @@ module idt
 
 import cpu
 import log
+import driver.term
 
 @[irq_handler]
 fn devide_by_zero(frame &InterruptFrame) {
-	log.error(c'Divide by zero exception!\n')
+	log.error(c'Divide by zero!\n')
 	cpu.hlt()
 }
 
@@ -46,16 +47,14 @@ fn page_fault(frame &InterruptFrame, error_code u64) {
 
 @[irq_handler]
 fn timer(frame &InterruptFrame) {
+	term.update()
 	lapic.eoi()
 }
 
 @[irq_handler]
 fn keyboard(frame &InterruptFrame) {
 	scancode := cpu.port_in[u8](0x60)
-	ch := C.terminal_handle_keyboard(scancode)
-	if ch != 0 {
-		C.terminal_process(ch)
-	}
+	ksc_queue.push(scancode)
 	lapic.eoi()
 }
 

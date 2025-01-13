@@ -37,7 +37,7 @@ pub fn (self Lapic) eoi() {
 
 @[inline]
 pub fn (self Lapic) id() u64 {
-	return self.read(lapic_reg_id) >> 24
+	return self.read(lapic_reg_id)
 }
 
 fn (self Lapic) read(reg u32) u64 {
@@ -71,7 +71,6 @@ fn (mut self Lapic) init() {
 	self.write(lapic_reg_timer, u64(idt.InterruptIndex.timer))
 	self.write(lapic_reg_spurious, 0xff | 1 << 8)
 	self.write(lapic_reg_timer_div, 0b1011)
-	self.write(lapic_reg_timer_initcnt, 0)
 
 	begin_time := hpet.elapsed()
 	self.write(lapic_reg_timer_initcnt, ~u32(0))
