@@ -4,6 +4,7 @@ import driver.serial
 
 #include "krlibc.c"
 
+#define any voidptr
 #define STB_SPRINTF_NOFLOAT
 #define STB_SPRINTF_IMPLEMENTATION
 #include "sprintf.h"

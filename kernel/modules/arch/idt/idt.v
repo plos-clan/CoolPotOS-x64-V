@@ -58,19 +58,19 @@ pub fn init() {
 		; memory
 	}
 
-	register_handler(0, devide_by_zero, 0, 0x8e)
-	register_handler(6, invalid_opcode, 0, 0x8e)
-	register_handler(8, double_fault, 1, 0x8e)
-	register_handler(11, segment_not_present, 0, 0x8e)
-	register_handler(13, general_protection_fault, 0, 0x8e)
-	register_handler(14, page_fault, 0, 0x8e)
+	register_handler(0, &devide_by_zero, 0, 0x8e)
+	register_handler(6, &invalid_opcode, 0, 0x8e)
+	register_handler(8, &double_fault, 1, 0x8e)
+	register_handler(11, &segment_not_present, 0, 0x8e)
+	register_handler(13, &general_protection_fault, 0, 0x8e)
+	register_handler(14, &page_fault, 0, 0x8e)
 
-	register_handler(u16(InterruptIndex.timer), timer, 0, 0x8e)
-	register_handler(u16(InterruptIndex.keyboard), keyboard, 0, 0x8e)
-	register_handler(u16(InterruptIndex.mouse), mouse, 0, 0x8e)
-	register_handler(u16(InterruptIndex.hpet_timer), hpet_timer, 0, 0x8e)
+	register_handler(u16(InterruptIndex.timer), &timer, 0, 0x8e)
+	register_handler(u16(InterruptIndex.keyboard), &keyboard, 0, 0x8e)
+	register_handler(u16(InterruptIndex.mouse), &mouse, 0, 0x8e)
+	register_handler(u16(InterruptIndex.hpet_timer), &hpet_timer, 0, 0x8e)
 
-	log.info(c'Interrupt Descriptor Table loaded!\n')
+	log.success(c'Interrupt Descriptor Table loaded!\n')
 }
 
 @[packed]

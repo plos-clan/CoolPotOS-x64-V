@@ -12,6 +12,7 @@ endif
 CFLAGS = -w -m64 -O3 -I./kernel/c -Ilibs -g
 CFLAGS += -ffunction-sections -fdata-sections -fno-stack-protector
 CFLAGS += -mno-80387 -mno-mmx -mno-sse -mno-sse2 -mno-red-zone
+
 VFLAGS = -manualfree -gc none -enable-globals -no-parallel
 VFLAGS += -nofloat -d no_backtrace -no-bounds-checking -os vinix
 
@@ -29,7 +30,6 @@ default: image
 
 # Create build directories
 setup:
-	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(ISO_DIR)
 	@cp -r assets/limine/* $(ISO_DIR)/
 

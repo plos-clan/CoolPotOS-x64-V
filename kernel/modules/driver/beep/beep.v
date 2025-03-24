@@ -9,9 +9,9 @@ const speaker_port = 0x61
 pub fn play(freq u16, ms u64) {
 	div := u16(1193180 / freq)
 	
-	port_out[u8](command_register_port, 0xb6)
-	port_out[u8](channel_2_port, u8(div))
-	port_out[u8](channel_2_port, u8(div >> 8))
+	port_out(command_register_port, u8(0xb6))
+	port_out(channel_2_port, u8(div))
+	port_out(channel_2_port, u8(div >> 8))
 
 	mut tmp := port_in[u8](speaker_port)
 

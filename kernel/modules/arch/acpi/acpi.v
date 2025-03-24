@@ -40,7 +40,6 @@ struct GenericAddress {
 	address       u64
 }
 
-
 pub fn init() {
 	flags := mem.MappingType.kernel_data.flags()
 	rsdp_addr := u64(rsdp_request.response.address)
@@ -55,10 +54,10 @@ pub fn init() {
 	log.debug(c'ACPI root SDT at %#p\n', rsdt_addr)
 
 	madt_ptr := root_sdt.find_sdt(c'APIC') or { return }
-	log.info(c'Found MADT at 0x%p\n', madt_ptr)
+	log.info(c'Found MADT at 0x%p\n', usize(madt_ptr))
 	init_madt(madt_ptr)
 
 	hpet_ptr := root_sdt.find_sdt(c'HPET') or { return }
-	log.info(c'Found HPET at 0x%p\n', hpet_ptr)
+	log.info(c'Found HPET at 0x%p\n', usize(hpet_ptr))
 	hpet_init(hpet_ptr)
 }

@@ -42,7 +42,7 @@ fn general_protection_fault(frame &InterruptFrame, error_code u64) {
 @[irq_handler]
 fn page_fault(frame &InterruptFrame, error_code u64) {
 	log.error(c'Page fault (error code: %#llx)\n', error_code)
-	log.error(c'Faulting address: %#p\n', voidptr(cpu.read_cr2()))
+	log.error(c'Faulting address: %#p\n', cpu.read_cr2())
 	frame.debug()
 	cpu.hlt()
 }

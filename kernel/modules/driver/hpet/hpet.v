@@ -47,6 +47,9 @@ pub fn init() {
 	hpet.fms_per_tick = cpu.mmio_in(&u32(period_addr))
 	log.debug(c'HPET frequency: %d fms per tick\n', hpet.fms_per_tick)
 
+	counter_addr := hpet.base_addr + 0xf0
+	cpu.mmio_out(&u64(counter_addr), 0)
+
 	enable_cnf_addr := hpet.base_addr + 0x10
 	old_cnf := cpu.mmio_in(&u64(enable_cnf_addr))
 	cpu.mmio_out(&u64(enable_cnf_addr), old_cnf | 1)
