@@ -9,7 +9,7 @@ import driver.gop
 import driver.hpet
 import driver.serial
 import driver.term
-import limine
+import wenxuanjun.limine
 import mem
 
 @[_linker_section: '.requests']

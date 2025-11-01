@@ -1,6 +1,6 @@
 module mem
 
-import limine
+import wenxuanjun.limine
 import log
 
 @[_linker_section: '.requests']

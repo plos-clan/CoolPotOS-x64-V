@@ -1,6 +1,6 @@
 module acpi
 
-import limine
+import wenxuanjun.limine
 import log
 import mem
 

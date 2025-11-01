@@ -8,8 +8,6 @@ mut:
 	mask   u64
 	head   u64
 	tail   u64
-	size   u64
-	inited bool
 }
 
 pub fn Queue.new[T](size u64) Queue[T] {
@@ -18,22 +16,20 @@ pub fn Queue.new[T](size u64) Queue[T] {
 		mask:   size - 1
 		head:   0
 		tail:   0
-		size:   size
-		inited: true
 	}
 }
 
 pub fn (mut self Queue[T]) push(val T) bool {
-	if !self.inited {
+	if self.buf == 0 {
 		return false
 	}
 
 	head := cpu.load(&self.head)
 	next := (head + 1) & self.mask
-
 	if next == cpu.load(&self.tail) {
 		return false
 	}
+
 	unsafe {
 		*(&self.buf[head]) = val
 	}
@@ -43,7 +39,7 @@ pub fn (mut self Queue[T]) push(val T) bool {
 }
 
 pub fn (mut self Queue[T]) pop() ?T {
-	if !self.inited {
+	if self.buf == 0 {
 		return none
 	}
 

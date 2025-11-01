@@ -2,7 +2,7 @@ module apic
 
 import arch.cpu
 import arch.idt
-import limine
+import wenxuanjun.limine
 import mem
 import log
 
