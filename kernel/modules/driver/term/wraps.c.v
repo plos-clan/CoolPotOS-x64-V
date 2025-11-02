@@ -7,22 +7,21 @@ module term
 struct C.TerminalDisplay {
 	width   usize
 	height  usize
-	address &u32
+	buffer  &u32
+	pitch   usize
+	red_mask_size   u8
+	red_mask_shift  u8
+	green_mask_size u8
+	green_mask_shift u8
+	blue_mask_size  u8
+	blue_mask_shift u8
 }
 
-fn C.terminal_init(&C.TerminalDisplay, f32, fn (usize), fn (voidptr), voidptr)
-fn C.terminal_process_char(ch char)
+fn C.terminal_init(&C.TerminalDisplay, f32, fn (usize), fn (voidptr))
+fn C.terminal_process_byte(char)
 fn C.terminal_flush()
-fn C.terminal_set_auto_crnl(bool)
+fn C.terminal_set_crnl_mapping(bool)
 fn C.terminal_set_auto_flush(bool)
 fn C.terminal_set_bell_handler(fn ())
-fn C.terminal_handle_keyboard(scancode u8) &char
-
-fn handle_keyboard(sc u8) {
-	res := C.terminal_handle_keyboard(sc)
-	unsafe {
-		for i := 0; res != 0 && res[i] != 0; i++ {
-			term_buffer.push(res[i])
-		}
-	}
-}
+fn C.terminal_handle_keyboard(scancode u8)
+fn C.terminal_set_pty_writer(fn (&u8))
