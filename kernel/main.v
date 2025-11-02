@@ -8,6 +8,7 @@ import arch.gdt
 import arch.idt
 import driver.gop
 import driver.hpet
+import driver.mouse
 import driver.serial
 import driver.term
 import wenxuanjun.limine
@@ -40,6 +41,7 @@ pub fn main() {
 	acpi.init()
 	hpet.init()
 	apic.init()
+	mouse.init()
 
 	for {
 		cpu.hlt()

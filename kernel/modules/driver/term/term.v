@@ -3,8 +3,6 @@ module term
 
 import beep
 import sync { Queue }
-import serial
-import log
 
 __global (
 	ksc_queue   Queue[u8]

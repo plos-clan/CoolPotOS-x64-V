@@ -6,7 +6,6 @@ pub fn port_in[T](port u16) T {
 		in ret, port
 		; =a (ret)
 		; Nd (port)
-		; memory
 	}
 	return ret
 }
@@ -16,7 +15,6 @@ pub fn port_out[T](port u16, value T) {
 		out port, value
 		; ; a (value)
 		  Nd (port)
-		; memory
 	}
 }
 
