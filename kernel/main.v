@@ -11,7 +11,7 @@ import driver.hpet
 import driver.mouse
 import driver.serial
 import driver.term
-import wenxuanjun.limine
+import limine
 import mem
 
 @[_linker_section: '.requests']

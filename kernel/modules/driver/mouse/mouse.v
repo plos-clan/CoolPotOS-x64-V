@@ -1,6 +1,8 @@
 @[has_globals]
 module mouse
 
+import log
+import ps2
 import sync { Queue }
 
 __global (
@@ -14,18 +16,26 @@ pub enum MouseType {
 	five_button
 }
 
+fn (type MouseType) name() &char {
+	return match type {
+		.standard { c"Standard" }
+		.only_scroll { c"OnlyScroll" }
+		.five_button { c"FiveButton" }
+	}
+}
+
 pub struct Mouse {
-	ports MousePorts
 mut:
-	mouse_type     MouseType = .standard
+	mouse_type     MouseType
 	packet_index   u8
 	current_packet MousePacket
 	button_states  [3]bool
 }
 
 pub fn init() ? {
-	mouse.ports.send(0xf4)?
+	ps2.send_command(0xf4)?
 	mouse.mouse_type = mouse.identify_type()?
+	log.info(c"Mouse: %s\n", mouse.mouse_type.name())
 }
 
 pub fn process_packet(packet u8) {
@@ -55,13 +65,12 @@ pub fn process_packet(packet u8) {
 }
 
 fn (self Mouse) identify_type() ?MouseType {
-	self.ports.send(0xf2)
 	for rate in [u8(200), 100, 80] {
-		self.ports.send(0xf3)?
-		self.ports.send(rate)?
+		ps2.send_command(0xf3)?
+		ps2.send_command(rate)?
 	}
-	self.ports.send(0xf2)?
-	return match self.ports.read()? {
+	ps2.send_command(0xf2)?
+	return match ps2.read_data()? {
 		0x03 { MouseType.only_scroll }
 		0x04 { MouseType.five_button }
 		else { MouseType.standard }

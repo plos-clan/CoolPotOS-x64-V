@@ -2,6 +2,8 @@ module idt
 
 import cpu
 import log
+import driver.mouse
+import driver.ps2
 import driver.term
 
 @[irq_handler]
@@ -48,26 +50,27 @@ fn page_fault(frame &InterruptFrame, error_code u64) {
 }
 
 @[irq_handler]
-fn timer(frame &InterruptFrame) {
+fn timer_handler(frame &InterruptFrame) {
 	term.update()
 	lapic.eoi()
 }
 
 @[irq_handler]
-fn keyboard(frame &InterruptFrame) {
-	scancode := cpu.port_in[u8](0x60)
-	ksc_queue.push(scancode)
-	lapic.eoi()
-}
-
-@[irq_handler]
-fn mouse(frame &InterruptFrame) {
-	log.debug(c'Mouse interrupt!\n')
-	lapic.eoi()
-}
-
-@[irq_handler]
-fn hpet_timer(frame &InterruptFrame) {
+fn hpet_timer_handler(frame &InterruptFrame) {
 	log.debug(c'Hpet Timer interrupt!\n')
+	lapic.eoi()
+}
+
+@[irq_handler]
+fn keyboard_handler(frame &InterruptFrame) {
+	scancode := ps2.read_data() or { return }
+	ksc_queue.push(scancode)
+	defer { lapic.eoi() }
+}
+
+@[irq_handler]
+fn mouse_handler(frame &InterruptFrame) {
+	packet := ps2.read_data() or { return }
+	mouse.process_packet(packet)
 	lapic.eoi()
 }

@@ -3,6 +3,7 @@ module term
 
 import beep
 import sync { Queue }
+import mouse { MouseEventScroll }
 
 __global (
 	ksc_queue   Queue[u8]
@@ -17,6 +18,13 @@ pub fn update() {
 		C.terminal_handle_keyboard(sc)
 		need_flush = true
 	}
+
+	for {
+		ev := mouse_queue.pop() or { break }
+    	if ev is MouseEventScroll {
+      		C.terminal_handle_mouse_scroll(ev.delta)
+    	}
+  	}
 
 	for {
 		ch := term_buffer.pop() or { break }
@@ -54,6 +62,7 @@ pub fn init() {
 	C.terminal_init(&display, 10.0, C.malloc, C.free)
 	C.terminal_set_auto_flush(false)
 	C.terminal_set_crnl_mapping(true)
+	C.terminal_set_scroll_speed(5)
 	C.terminal_set_bell_handler(fn () { beep.play(750, 100) })
 	C.terminal_set_pty_writer(pty_writer)
 

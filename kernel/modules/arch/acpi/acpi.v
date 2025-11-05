@@ -1,7 +1,7 @@
 @[has_globals]
 module acpi
 
-import wenxuanjun.limine
+import limine
 import log
 import mem
 

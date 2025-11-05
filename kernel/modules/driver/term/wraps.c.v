@@ -18,10 +18,12 @@ struct C.TerminalDisplay {
 }
 
 fn C.terminal_init(&C.TerminalDisplay, f32, fn (usize), fn (voidptr))
-fn C.terminal_process_byte(char)
 fn C.terminal_flush()
-fn C.terminal_set_crnl_mapping(bool)
+fn C.terminal_process_byte(char)
+fn C.terminal_handle_keyboard(u8)
+fn C.terminal_handle_mouse_scroll(isize)
+fn C.terminal_set_scroll_speed(usize)
 fn C.terminal_set_auto_flush(bool)
+fn C.terminal_set_crnl_mapping(bool)
 fn C.terminal_set_bell_handler(fn ())
-fn C.terminal_handle_keyboard(scancode u8)
 fn C.terminal_set_pty_writer(fn (&u8))

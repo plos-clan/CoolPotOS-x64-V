@@ -13,8 +13,8 @@ CFLAGS = -w -m64 -O3 -I./kernel/c -Ilibs -g
 CFLAGS += -ffunction-sections -fdata-sections -fno-stack-protector
 CFLAGS += -mno-80387 -mno-mmx -mno-sse -mno-sse2 -mno-red-zone
 
-VFLAGS = -w -manualfree -gc none -no-parallel
-VFLAGS += -nofloat -d no_backtrace -no-bounds-checking
+VFLAGS = -w -manualfree -gc none -nofloat
+VFLAGS += -d no_backtrace -no-bounds-checking
 
 LDFLAGS = -nostdlib -static -gc-sections -T assets/linker.ld
 LDFLAGS += -Llibs -los_terminal -lalloc

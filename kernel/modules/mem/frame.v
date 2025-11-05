@@ -1,7 +1,7 @@
 @[has_globals]
 module mem
 
-import wenxuanjun.limine
+import limine
 import log
 
 @[_linker_section: '.requests']

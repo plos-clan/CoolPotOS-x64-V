@@ -4,23 +4,23 @@ import arch.cpu
 
 pub struct Queue[T] {
 mut:
-	buf    &T
-	mask   u64
-	head   u64
-	tail   u64
+	buf  &T
+	mask u64
+	head u64
+	tail u64
 }
 
 pub fn Queue.new[T](size u64) Queue[T] {
 	return Queue[T]{
-		buf:    &T(C.malloc(size * sizeof(T)))
-		mask:   size - 1
-		head:   0
-		tail:   0
+		buf:  unsafe { &T(C.malloc(size * sizeof(T))) }
+		mask: size - 1
+		head: 0
+		tail: 0
 	}
 }
 
 pub fn (mut self Queue[T]) push(val T) bool {
-	if self.buf == 0 {
+	if voidptr(self.buf) == 0 {
 		return false
 	}
 
@@ -39,7 +39,7 @@ pub fn (mut self Queue[T]) push(val T) bool {
 }
 
 pub fn (mut self Queue[T]) pop() ?T {
-	if self.buf == 0 {
+	if voidptr(self.buf) == 0 {
 		return none
 	}
 

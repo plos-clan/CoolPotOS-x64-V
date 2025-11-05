@@ -1,7 +1,7 @@
 @[has_globals]
 module gop
 
-import wenxuanjun.limine
+import limine
 
 @[_linker_section: '.requests']
 @[cinit]
