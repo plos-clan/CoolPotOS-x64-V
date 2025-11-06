@@ -38,10 +38,6 @@ pub fn update() {
 	}
 }
 
-fn beep_handler () {
-  beep.play(750, 100)
-}
-
 fn pty_writer(buf &u8) {
   unsafe {
     for i := 0; buf[i]; i++ {
@@ -68,7 +64,7 @@ pub fn init() {
 	C.terminal_set_auto_flush(false)
 	C.terminal_set_crnl_mapping(true)
 	C.terminal_set_scroll_speed(5)
-	C.terminal_set_bell_handler(beep_handler)
+	C.terminal_set_bell_handler(|| beep.play(750, 100))
 	C.terminal_set_pty_writer(pty_writer)
 
 	ksc_queue = sync.Queue.new[u8](1024)
