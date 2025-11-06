@@ -1,6 +1,7 @@
 @[has_globals]
 module main
 
+import limine
 import arch.acpi
 import arch.apic
 import arch.cpu
@@ -11,8 +12,13 @@ import driver.hpet
 import driver.mouse
 import driver.serial
 import driver.term
-import limine
 import mem
+
+#include "krlibc.h"
+#include "vcompat.h"
+
+fn C.memset(voidptr, isize, usize)
+fn C.memcmp(voidptr, voidptr, usize) int
 
 @[_linker_section: '.requests']
 @[cinit]
@@ -40,8 +46,8 @@ pub fn main() {
 	term.init()
 	acpi.init()
 	hpet.init()
-	apic.init()
 	mouse.init()
+	apic.init()
 
 	for {
 		cpu.hlt()

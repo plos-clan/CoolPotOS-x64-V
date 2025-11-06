@@ -22,7 +22,7 @@ struct SdtHeader {
 }
 
 @[inline]
-fn (self RootSdt) count() u64 {
+fn (self RootSdt) size() u64 {
 	ptr_size := u32(if use_xsdt { 8 } else { 4 })
 	data_length := self.header.length - sizeof(SdtHeader)
 	return data_length / ptr_size
@@ -40,7 +40,7 @@ fn (self RootSdt) entry(index u64) u64 {
 }
 
 fn (self RootSdt) find_sdt(name &char) ?voidptr {
-	for i := u64(0); i < self.count(); i++ {
+	for i := u64(0); i < self.size(); i++ {
 		ptr := mem.phys_to_virt(self.entry(i))
 		signature := &SdtHeader(ptr).signature
 
@@ -63,7 +63,7 @@ fn RootSdt.init(addr u64) &RootSdt {
 	base_addr := u64(root_sdt.ptrs_start)
 	kernel_page_table.map_range_to(base_addr, 0x1000, flags)
 
-	for i := u64(0); i < root_sdt.count(); i++ {
+	for i := u64(0); i < root_sdt.size(); i++ {
 		ptr := u64(root_sdt.entry(i))
 		kernel_page_table.map_range_to(ptr, 0x1000, flags)
 	}
