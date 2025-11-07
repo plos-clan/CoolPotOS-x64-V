@@ -67,6 +67,6 @@ pub fn init() {
 	C.terminal_set_bell_handler(|| beep.play(750, 100))
 	C.terminal_set_pty_writer(pty_writer)
 
-	ksc_queue = sync.Queue.new[u8](1024)
-	term_buffer = sync.Queue.new[char](1024)
+	ksc_queue = Queue.new[u8](128)
+	term_buffer = Queue.new[char](4096)
 }

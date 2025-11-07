@@ -1,7 +1,6 @@
 @[has_globals]
 module main
 
-import prelude
 import limine
 import arch.acpi
 import arch.apic

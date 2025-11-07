@@ -900,7 +900,7 @@ static char *stbsp__clamp_callback(const char *buf, void *user, int len)
    return (c->count >= STB_SPRINTF_MIN) ? c->buf : c->tmp; // go direct into buffer if you can
 }
 
-static char * stbsp__count_clamp_callback( const char * buf, void * user, int len )
+static char * stbsp__count_clamp_callback(const char *buf, void *user, int len)
 {
    stbsp__context * c = (stbsp__context*)user;
    (void) sizeof(buf);
@@ -909,15 +909,15 @@ static char * stbsp__count_clamp_callback( const char * buf, void * user, int le
    return c->tmp; // go direct into buffer if you can
 }
 
-STBSP__PUBLICDEF int STB_SPRINTF_DECORATE( vsnprintf )( char * buf, int count, char const * fmt, va_list va )
+STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsnprintf)(char *buf, int count, char const *fmt, va_list va)
 {
    stbsp__context c;
 
-   if ( (count == 0) && !buf )
+   if ((count == 0) && !buf)
    {
       c.length = 0;
 
-      STB_SPRINTF_DECORATE( vsprintfcb )( stbsp__count_clamp_callback, &c, c.tmp, fmt, va );
+      STB_SPRINTF_DECORATE(vsprintfcb)(stbsp__count_clamp_callback, &c, c.tmp, fmt, va);
    }
    else
    {
@@ -927,11 +927,11 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE( vsnprintf )( char * buf, int count, c
       c.count = count;
       c.length = 0;
 
-      STB_SPRINTF_DECORATE( vsprintfcb )( stbsp__clamp_callback, &c, stbsp__clamp_callback(0,&c,0), fmt, va );
+      STB_SPRINTF_DECORATE(vsprintfcb)(stbsp__clamp_callback, &c, stbsp__clamp_callback(0,&c,0), fmt, va);
 
       // zero-terminate
-      l = (int)( c.buf - buf );
-      if ( l >= count ) // should never be greater, only equal (or less) than count
+      l = (int)(c.buf - buf);
+      if (l >= count) // should never be greater, only equal (or less) than count
          l = count - 1;
       buf[l] = 0;
    }

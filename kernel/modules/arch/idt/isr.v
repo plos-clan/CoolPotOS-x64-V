@@ -72,5 +72,5 @@ fn keyboard_handler(frame &InterruptFrame) {
 fn mouse_handler(frame &InterruptFrame) {
 	packet := ps2.read_data() or { return }
 	mouse.process_packet(packet)
-	lapic.eoi()
+	defer { lapic.eoi() }
 }

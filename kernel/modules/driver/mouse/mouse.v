@@ -35,6 +35,7 @@ mut:
 pub fn init() ? {
 	ps2.send_command(0xf4)?
 	mouse.mouse_type = mouse.identify_type()?
+	mouse_queue = Queue.new[MouseEvent](1024)
 	log.info(c"Mouse: %s", mouse.mouse_type.name())
 }
 
