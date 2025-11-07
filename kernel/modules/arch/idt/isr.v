@@ -8,43 +8,43 @@ import driver.term
 
 @[irq_handler]
 fn devide_by_zero(frame &InterruptFrame) {
-	log.error(c'Divide by zero!\n')
+	log.error(c'Divide by zero!')
 	frame.debug()
 	cpu.hlt()
 }
 
 @[irq_handler]
 fn invalid_opcode(frame &InterruptFrame) {
-	log.error(c'Invalid opcode!\n')
+	log.error(c'Invalid opcode!')
 	frame.debug()
 	cpu.hlt()
 }
 
 @[irq_handler]
 fn double_fault(frame &InterruptFrame, error_code u64) {
-	log.error(c'Double fault (error code: %#llx)\n', error_code)
+	log.error(c'Double fault (error code: %#llx)', error_code)
 	frame.debug()
 	cpu.hlt()
 }
 
 @[irq_handler]
 fn segment_not_present(frame &InterruptFrame, error_code u64) {
-	log.error(c'Segment not present (error code: %#llx)\n', error_code)
+	log.error(c'Segment not present (error code: %#llx)', error_code)
 	frame.debug()
 	cpu.hlt()
 }
 
 @[irq_handler]
 fn general_protection_fault(frame &InterruptFrame, error_code u64) {
-	log.error(c'General protection fault (error code: %#llx)\n', error_code)
+	log.error(c'General protection fault (error code: %#llx)', error_code)
 	frame.debug()
 	cpu.hlt()
 }
 
 @[irq_handler]
 fn page_fault(frame &InterruptFrame, error_code u64) {
-	log.error(c'Page fault (error code: %#llx)\n', error_code)
-	log.error(c'Faulting address: %#p\n', cpu.read_cr2())
+	log.error(c'Page fault (error code: %#llx)', error_code)
+	log.error(c'Faulting address: %#p', cpu.read_cr2())
 	frame.debug()
 	cpu.hlt()
 }
@@ -57,7 +57,7 @@ fn timer_handler(frame &InterruptFrame) {
 
 @[irq_handler]
 fn hpet_timer_handler(frame &InterruptFrame) {
-	log.debug(c'Hpet Timer interrupt!\n')
+	log.debug(c'Hpet Timer interrupt!')
 	lapic.eoi()
 }
 

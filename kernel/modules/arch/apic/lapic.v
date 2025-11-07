@@ -61,12 +61,12 @@ fn (mut self Lapic) init() {
 	self.x2apic_mode = mp_request.response.flags & 1 != 0
 
 	if self.x2apic_mode {
-		log.info(c'Using x2APIC mode!\n')
+		log.info(c'Using x2APIC mode!')
 	} else {
 		flags := mem.MappingType.kernel_data.flags()
 		kernel_page_table.map_range_to(lapic_addr, 0x1000, flags)
 		self.base_addr = mem.phys_to_virt(lapic_addr)
-		log.info(c'Using xAPIC mode! Base address: %#p\n', self.base_addr)
+		log.info(c'Using xAPIC mode! Base address: %#p', self.base_addr)
 	}
 
 	self.write(lapic_reg_timer, u64(idt.InterruptIndex.timer))
@@ -79,7 +79,7 @@ fn (mut self Lapic) init() {
 	lapic_ticks := ~u32(0) - self.read(lapic_reg_timer_curcnt)
 
 	calibrated_timer_initial := lapic_ticks * 1000 / lapic_timer_freq_hz
-	log.info(c'Calibrated LAPIC timer: %d ticks per second\n', calibrated_timer_initial)
+	log.info(c'Calibrated LAPIC timer: %d ticks per second', calibrated_timer_initial)
 
 	self.write(lapic_reg_timer, self.read(lapic_reg_timer) | 1 << 17)
 	self.write(lapic_reg_timer_initcnt, calibrated_timer_initial)

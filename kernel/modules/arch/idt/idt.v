@@ -71,7 +71,7 @@ pub fn init() {
 	register_handler(u16(InterruptIndex.mouse), &mouse_handler, 0, 0x8e)
 	register_handler(u16(InterruptIndex.hpet_timer), &hpet_timer_handler, 0, 0x8e)
 
-	log.success(c'Interrupt Descriptor Table loaded!\n')
+	log.success(c'Interrupt Descriptor Table loaded!')
 }
 
 @[packed]
@@ -84,7 +84,7 @@ struct InterruptFrame {
 }
 
 fn (frame InterruptFrame) debug() {
-	log.debug(c'Interrupt frame:\n')
-	log.print(c'CS: %#x SS: %#x RFLAGS: %#x\n', frame.cs, frame.ss, frame.rflags)
-	log.print(c'RIP: %#p RSP: %#p\n', frame.rip, frame.rsp)
+	log.debug(c'Interrupt frame:')
+	log.println(c'CS: %#x SS: %#x RFLAGS: %#x', frame.cs, frame.ss, frame.rflags)
+	log.println(c'RIP: %#p RSP: %#p', frame.rip, frame.rsp)
 }

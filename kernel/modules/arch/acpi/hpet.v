@@ -19,5 +19,5 @@ struct HpetInfo {
 fn hpet_init(table_addr voidptr) {
 	hpet_info := unsafe { &HpetInfo(table_addr) }
 	hpet_addr = hpet_info.base_addr.address
-	log.debug(c'HPET base address: %#p\n', hpet_addr)
+	log.debug(c'HPET base address: %#p', hpet_addr)
 }

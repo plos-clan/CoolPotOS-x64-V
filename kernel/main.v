@@ -1,6 +1,7 @@
 @[has_globals]
 module main
 
+import prelude
 import limine
 import arch.acpi
 import arch.apic
@@ -13,12 +14,6 @@ import driver.mouse
 import driver.serial
 import driver.term
 import mem
-
-#include "krlibc.h"
-#include "vcompat.h"
-
-fn C.memset(voidptr, isize, usize)
-fn C.memcmp(voidptr, voidptr, usize) int
 
 @[_linker_section: '.requests']
 @[cinit]

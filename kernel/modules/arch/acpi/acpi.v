@@ -48,17 +48,17 @@ pub fn init() {
 
 	rsdp = &Rsdp(mem.phys_to_virt(rsdp_addr))
 	use_xsdt = rsdp.revision != 0
-	log.debug(c'ACPI revision: %d\n', rsdp.revision)
+	log.debug(c'ACPI revision: %d', rsdp.revision)
 
 	rsdt_addr := if use_xsdt { u64(rsdp.xsdt_address) } else { rsdp.rsdt_address }
 	root_sdt = RootSdt.init(rsdt_addr)
-	log.debug(c'ACPI root SDT at %#p\n', rsdt_addr)
+	log.debug(c'ACPI root SDT at %#p', rsdt_addr)
 
 	madt_ptr := root_sdt.find_sdt(c'APIC') or { return }
-	log.info(c'Found MADT at 0x%p\n', usize(madt_ptr))
+	log.info(c'Found MADT at 0x%p', usize(madt_ptr))
 	init_madt(madt_ptr)
 
 	hpet_ptr := root_sdt.find_sdt(c'HPET') or { return }
-	log.info(c'Found HPET at 0x%p\n', usize(hpet_ptr))
+	log.info(c'Found HPET at 0x%p', usize(hpet_ptr))
 	hpet_init(hpet_ptr)
 }

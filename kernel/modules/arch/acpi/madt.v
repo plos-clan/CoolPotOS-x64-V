@@ -69,6 +69,6 @@ fn init_madt(table_addr voidptr) {
 		current += u64(header.length)
 	}
 
-	log.debug(c'Local APIC address: %#p\n', lapic_addr)
-	log.debug(c'IO APIC address: %#p\n', ioapic_addr)
+	log.debug(c'Local APIC address: %#p', lapic_addr)
+	log.debug(c'IO APIC address: %#p', ioapic_addr)
 }

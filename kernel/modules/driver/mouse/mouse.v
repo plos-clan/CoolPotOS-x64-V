@@ -35,7 +35,7 @@ mut:
 pub fn init() ? {
 	ps2.send_command(0xf4)?
 	mouse.mouse_type = mouse.identify_type()?
-	log.info(c"Mouse: %s\n", mouse.mouse_type.name())
+	log.info(c"Mouse: %s", mouse.mouse_type.name())
 }
 
 pub fn process_packet(packet u8) {

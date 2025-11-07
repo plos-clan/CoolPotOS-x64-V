@@ -46,7 +46,7 @@ pub fn init() {
 
 	period_addr := hpet.base_addr + 0x4
 	hpet.fms_per_tick = cpu.mmio_in(&u32(period_addr))
-	log.debug(c'HPET frequency: %d fms per tick\n', hpet.fms_per_tick)
+	log.debug(c'HPET frequency: %d fms per tick', hpet.fms_per_tick)
 
 	counter_addr := hpet.base_addr + 0xf0
 	cpu.mmio_out(&u64(counter_addr), 0)
@@ -60,8 +60,8 @@ pub fn init() {
 
 	route_cap := old_config >> 32
 	if (route_cap & (u64(1) << u64(apic.IrqVector.hpet_timer))) == 1 {
-		log.warn(c'HPET timer does not support our IRQ vector!\n')
-		log.warn(c'Timer route capabilities: %#032b\n', route_cap)
+		log.warn(c'HPET timer does not support our IRQ vector!')
+		log.warn(c'Timer route capabilities: %#032b', route_cap)
 	}
 
 	timer_config := u64(apic.IrqVector.hpet_timer) << 9 | 1 << 2

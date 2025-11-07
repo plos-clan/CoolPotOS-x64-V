@@ -74,7 +74,7 @@ pub fn init_frame() {
 	}
 
 	available_memory := origin_frames / 256
-	log.info(c'Available memory: %lld MiB\n', available_memory)
+	log.info(c'Available memory: %lld MiB', available_memory)
 }
 
 pub fn alloc_frames(count usize) ?usize {

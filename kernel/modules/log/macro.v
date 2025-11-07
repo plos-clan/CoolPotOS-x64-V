@@ -1,18 +1,12 @@
 module log
 
-pub fn print(fmt voidptr, ...) {
-	ap := C.va_list{}
-	C.va_start(ap, fmt)
-	vprint(fmt, ap)
-	C.va_end(ap)
-}
-
 pub fn success(fmt voidptr, ...) {
 	print(c"[\033[32mSUCCESS\033[0m] ")
 	ap := C.va_list{}
 	C.va_start(ap, fmt)
 	vprint(fmt, ap)
 	C.va_end(ap)
+	print(c"\n")
 }
 
 pub fn info(fmt voidptr, ...) {
@@ -21,6 +15,7 @@ pub fn info(fmt voidptr, ...) {
 	C.va_start(ap, fmt)
 	vprint(fmt, ap)
 	C.va_end(ap)
+	print(c"\n")
 }
 
 pub fn debug(fmt voidptr, ...) {
@@ -29,6 +24,7 @@ pub fn debug(fmt voidptr, ...) {
 	C.va_start(ap, fmt)
 	vprint(fmt, ap)
 	C.va_end(ap)
+	print(c"\n")
 }
 
 pub fn warn(fmt voidptr, ...) {
@@ -37,6 +33,7 @@ pub fn warn(fmt voidptr, ...) {
 	C.va_start(ap, fmt)
 	vprint(fmt, ap)
 	C.va_end(ap)
+	print(c"\n")
 }
 
 pub fn error(fmt voidptr, ...) {
@@ -45,4 +42,20 @@ pub fn error(fmt voidptr, ...) {
 	C.va_start(ap, fmt)
 	vprint(fmt, ap)
 	C.va_end(ap)
+	print(c"\n")
+}
+
+pub fn print(fmt voidptr, ...) {
+	ap := C.va_list{}
+	C.va_start(ap, fmt)
+	vprint(fmt, ap)
+	C.va_end(ap)
+}
+
+pub fn println(fmt voidptr, ...) {
+	ap := C.va_list{}
+	C.va_start(ap, fmt)
+	vprint(fmt, ap)
+	C.va_end(ap)
+	print(c"\n")
 }
