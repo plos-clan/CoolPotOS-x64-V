@@ -68,7 +68,7 @@ pub fn load_gdt() {
 		; memory
 	}
 
-	log.success(c'Global Descriptor Table loaded!')
+	log.success(c'Global Descriptor Table loaded')
 }
 
 pub fn load_tss() {

@@ -6,7 +6,7 @@ import limine
 @[_linker_section: '.requests']
 @[cinit]
 __global (
-	volatile hhdm_request   = limine.HhdmRequest{
+	volatile hhdm_request = limine.HhdmRequest{
 		response: unsafe { nil }
 	}
 )

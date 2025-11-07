@@ -12,7 +12,6 @@ pub fn init() {
 	disable_pic()
 	lapic.init()
 	ioapic.init()
-	cpu.sti()
 }
 
 fn disable_pic() {

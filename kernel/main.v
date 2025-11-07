@@ -40,8 +40,9 @@ pub fn main() {
 	term.init()
 	acpi.init()
 	hpet.init()
-	mouse.init()
 	apic.init()
+	mouse.init()
+	cpu.sti()
 
 	for {
 		cpu.hlt()

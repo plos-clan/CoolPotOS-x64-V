@@ -71,7 +71,7 @@ pub fn init() {
 	register_handler(u16(InterruptIndex.mouse), &mouse_handler, 0, 0x8e)
 	register_handler(u16(InterruptIndex.hpet_timer), &hpet_timer_handler, 0, 0x8e)
 
-	log.success(c'Interrupt Descriptor Table loaded!')
+	log.success(c'Interrupt Descriptor Table loaded')
 }
 
 @[packed]

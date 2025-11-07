@@ -55,10 +55,10 @@ pub fn init() {
 	log.debug(c'ACPI root SDT at %#p', rsdt_addr)
 
 	madt_ptr := root_sdt.find_sdt(c'APIC') or { return }
-	log.info(c'Found MADT at 0x%p', usize(madt_ptr))
+	log.debug(c'Found MADT at 0x%p', usize(madt_ptr))
 	init_madt(madt_ptr)
 
 	hpet_ptr := root_sdt.find_sdt(c'HPET') or { return }
-	log.info(c'Found HPET at 0x%p', usize(hpet_ptr))
+	log.debug(c'Found HPET at 0x%p', usize(hpet_ptr))
 	hpet_init(hpet_ptr)
 }

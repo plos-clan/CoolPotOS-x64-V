@@ -49,6 +49,6 @@ typedef struct array {
     void* data;
 } array;
 
-array builtin__new_array_from_c_array(int len, int, int, void* c_array) {
-	return (array){.data = c_array, .len = len};
+array builtin__new_array_from_c_array(int len, int, int, void* arr) {
+	return (array){.data = arr, .len = len};
 }
