@@ -7,14 +7,12 @@ mut:
 }
 
 pub fn Bitmap.init(buffer &u8, size usize) Bitmap {
-	unsafe {
-		bitmap := Bitmap{
-			buffer: buffer
-			length: size * 8
-		}
-		C.memset(buffer, 0, size)
-		return bitmap
+	bitmap := Bitmap{
+		buffer: unsafe { buffer }
+		length: size * 8
 	}
+	C.memset(buffer, 0, size)
+	return bitmap
 }
 
 pub fn (bitmap Bitmap) get(index usize) bool {
