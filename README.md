@@ -7,7 +7,7 @@ This is a simple operating system for x86_64 written in V.
 Fetch `limine` dependency:
 
 ```bash
-v install --git https://github.com/wenxuanjun/v-limine
+v install https://github.com/wenxuanjun/v-limine
 ```
 
 **Available targets:**
