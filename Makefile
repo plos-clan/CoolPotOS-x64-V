@@ -1,54 +1,58 @@
-override IMAGE_NAME := template
+ARCH ?= x86_64
+OS_NAME := CoolPotOS
 BUILD_DIR = build
-ISO_DIR = $(BUILD_DIR)/iso_img
+OUTPUT_IMG = $(BUILD_DIR)/$(OS_NAME)-$(ARCH).img
 
-CCACHE_EXISTS := $(shell which ccache 2> /dev/null)
-ifdef CCACHE_EXISTS
-    CC := ccache clang
-else
-    CC := clang
-endif
-
-CFLAGS = -w -m64 -O3 -I./kernel/c -Ilibs -g
+CFLAGS = -w -O0 -I./kernel/c -Ilibs -g -nostdinc
 CFLAGS += -ffunction-sections -fdata-sections -fno-stack-protector
-CFLAGS += -mno-80387 -mno-mmx -mno-sse -mno-sse2 -mno-red-zone
 
 VFLAGS = -w -manualfree -gc none -no-builtin -no-preludes
 VFLAGS += -nofloat -d no_backtrace -no-bounds-checking
 
-LDFLAGS = -nostdlib -static -gc-sections -T assets/linker.ld
-LDFLAGS += -Llibs -los_terminal -lalloc
+LDFLAGS = -nostdlib -static --gc-sections -T assets/linkers/$(ARCH).ld
+LDFLAGS += -Llibs/$(ARCH) -los_terminal -lalloc
 
-XORRISOFLAGS = -as mkisofs --efi-boot limine-uefi-cd.bin
-QEMUFLAGS = -M q35 -cpu qemu64,+x2apic -no-reboot -serial stdio -enable-kvm
-QEMUFLAGS += -drive if=pflash,format=raw,file=assets/ovmf-code.fd
-QEMUFLAGS += -audiodev pa,id=snd -machine pcspk-audiodev=snd
+QEMUFLAGS = -no-reboot -serial stdio
+QEMUFLAGS += -drive if=pflash,format=raw,file=assets/firmware/$(ARCH).fd
+QEMUFLAGS += -device nvme,drive=disk,serial=deadbeef
+QEMUFLAGS += -drive if=none,id=disk,format=raw,file=$(OUTPUT_IMG)
 
-.PHONY: default setup kernel image clean
+ifeq ($(ARCH), x86_64)
+	CFLAGS += -target x86_64-unknown-none
+	CFLAGS += -mcmodel=kernel -mgeneral-regs-only -mno-red-zone
+	QEMUFLAGS += -M q35 -cpu qemu64,+x2apic -enable-kvm
+	QEMUFLAGS += -audiodev pa,id=snd -machine pcspk-audiodev=snd
+	VFLAGS += -arch amd64
+	EFI_NAME := BOOTX64.EFI
+else ifeq ($(ARCH), loongarch64)
+	CFLAGS += -target loongarch64-unknown-none
+	CFLAGS += -mcmodel=medium -msoft-float
+	QEMUFLAGS += -M virt -cpu la464 -device ramfb -d in_asm,int
+	QEMUFLAGS += -device qemu-xhci -device usb-kbd -device usb-mouse
+	VFLAGS += -arch loongarch64
+	EFI_NAME := BOOTLOONGARCH64.EFI
+else
+	$(error Unsupported architecture: $(ARCH))
+endif
+
+.PHONY: default kernel image run clean
 
 default: image
 
-# Create build directories
-setup:
-	@mkdir -p $(ISO_DIR)
-	@cp -r assets/limine/* $(ISO_DIR)/
-
-# Compile V to C and link to kernel
-kernel: setup
-	@v $(VFLAGS) -o $(BUILD_DIR)/blob.c kernel
-	@$(CC) $(CFLAGS) -c $(BUILD_DIR)/blob.c -o $(BUILD_DIR)/blob.o
-	@ld $(BUILD_DIR)/blob.o $(LDFLAGS) -o $(BUILD_DIR)/kernel
-	@cp $(BUILD_DIR)/kernel $(ISO_DIR)/kernel
-
-# Create ISO image
-image: kernel
-	@xorriso $(XORRISOFLAGS) $(ISO_DIR) -o $(BUILD_DIR)/$(IMAGE_NAME).iso 2> /dev/null
-	@echo "Image created: $(BUILD_DIR)/$(IMAGE_NAME).iso"
-
-# Boot ISO image in QEMU
 run: image
-	@qemu-system-x86_64 $(QEMUFLAGS) $(BUILD_DIR)/$(IMAGE_NAME).iso
+	@qemu-system-$(ARCH) $(QEMUFLAGS)
 
-# Clean build artifacts
 clean:
 	@rm -rf $(BUILD_DIR)
+
+kernel:
+	@mkdir -p $(BUILD_DIR)
+	@v $(VFLAGS) -o $(BUILD_DIR)/blob.c kernel
+	@clang $(CFLAGS) -c $(BUILD_DIR)/blob.c -o $(BUILD_DIR)/blob.o
+	@ld.lld $(BUILD_DIR)/blob.o $(LDFLAGS) -o $(BUILD_DIR)/kernel
+
+image: kernel
+	@chmod +x assets/tools/oib
+	@assets/tools/oib -o $(OUTPUT_IMG) -f $(BUILD_DIR)/kernel:kernel \
+		-f assets/limine/limine.conf:limine.conf \
+		-f assets/limine/$(EFI_NAME):efi/boot/$(EFI_NAME)

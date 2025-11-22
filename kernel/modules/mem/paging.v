@@ -1,14 +1,29 @@
 @[has_globals]
 module mem
 
-import arch.cpu
+$if amd64 {
+	import arch.amd64.cpu
+} $else $if loongarch64 {
+	import arch.loongarch64.cpu
+}
 
-const pte_present = u64(1) << 0
-const pte_writable = u64(1) << 1
-const pte_user = u64(1) << 2
-const pte_huge = u64(1) << 7
-const pte_no_execute = u64(1) << 63
-const pte_parent_flags = pte_present | pte_writable | pte_user
+$if amd64 {
+	const pte_present = u64(1) << 0
+	const pte_writable = u64(1) << 1
+	const pte_user = u64(1) << 2
+	const pte_huge = u64(1) << 7
+	const pte_no_execute = u64(1) << 63
+	const pte_parent_flags = pte_present | pte_writable | pte_user
+} $else {
+	const pte_valid = u64(1) << 0
+	const pte_dirty = u64(1) << 1
+	const pte_plv_user = u64(3) << 2
+	const pte_mat_cc = u64(1) << 4
+	const pte_global = u64(1) << 6
+	const pte_huge = u64(1) << 6
+	const pte_no_execute = u64(1) << 62
+	const pte_parent_flags = 0
+}
 
 __global (
 	kernel_page_table PageMapper
@@ -68,13 +83,13 @@ mut:
 }
 
 pub fn (table PageMapper) translate(addr u64) ?u64 {
-	l4_index := (addr >> 39) & 0x1FF
-	l3_index := (addr >> 30) & 0x1FF
-	l2_index := (addr >> 21) & 0x1FF
-	l1_index := (addr >> 12) & 0x1FF
+	l4_index := (addr >> 39) & 0x1ff
+	l3_index := (addr >> 30) & 0x1ff
+	l2_index := (addr >> 21) & 0x1ff
+	l1_index := (addr >> 12) & 0x1ff
 
 	l4_table := table.l4_table
-	if table.l4_table.entries[l4_index].huge() {
+	if l4_table.entries[l4_index].huge() {
 		return none
 	}
 
@@ -145,9 +160,15 @@ pub fn (mapper PageMapper) map_range_to(frame u64, length u64, flags u64) {
 }
 
 pub fn init_paging() {
-	l4_table_frame := cpu.read_cr3()
-	mut l4_table := &PageTable(phys_to_virt(l4_table_frame))
-	kernel_page_table = PageMapper{l4_table}
+	$if amd64 {
+		l4_table_frame := cpu.read_cr3()
+		mut l4_table := &PageTable(phys_to_virt(l4_table_frame))
+		kernel_page_table = PageMapper{l4_table}
+	} $else {
+		l4_table_frame := cpu.read_pgdh()
+		mut l4_table := &PageTable(phys_to_virt(l4_table_frame))
+		kernel_page_table = PageMapper{l4_table}
+	}
 }
 
 pub enum MappingType {
@@ -157,9 +178,17 @@ pub enum MappingType {
 }
 
 pub fn (@type MappingType) flags() u64 {
-	match @type {
-		.user_code { return pte_present | pte_writable | pte_user }
-		.kernel_data { return pte_present | pte_writable | pte_no_execute }
-		.user_data { return pte_present | pte_writable | pte_user | pte_no_execute }
+	$if amd64 {
+		return match @type {
+			.user_code { pte_present | pte_writable | pte_user }
+			.kernel_data { pte_present | pte_writable | pte_no_execute }
+			.user_data { pte_present | pte_writable | pte_user | pte_no_execute }
+		}
+	} $else {
+		return match @type {
+			.user_code { pte_valid | pte_dirty | pte_plv_user | pte_mat_cc }
+			.kernel_data { pte_valid | pte_dirty | pte_global | pte_mat_cc | pte_no_execute }
+			.user_data { pte_valid | pte_dirty | pte_plv_user | pte_mat_cc | pte_no_execute }
+		}
 	}
 }

@@ -1,6 +1,10 @@
 module sync
 
-import arch.cpu
+$if amd64 {
+	import arch.amd64.cpu
+} $else $if loongarch64 {
+	import arch.loongarch64.cpu
+}
 
 pub struct Queue[T] {
 mut:

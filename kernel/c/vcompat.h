@@ -8,6 +8,13 @@
 #define E_STRUCT_DECL unsigned char _padding
 #define __IRQHANDLER __attribute__((interrupt))
 
+#if defined(__x86_64__) || defined(_M_AMD64)
+	#define __V_amd64  1
+#endif
+#if defined(__loongarch64)
+	#define __V_loongarch64  1
+#endif
+
 typedef int8_t i8;
 typedef int16_t i16;
 typedef int32_t i32;
@@ -50,5 +57,5 @@ typedef struct array {
 } array;
 
 array builtin__new_array_from_c_array(int len, int, int, void* arr) {
-	return (array){.data = arr, .len = len};
+	return (array){.len = len, .data = arr};
 }

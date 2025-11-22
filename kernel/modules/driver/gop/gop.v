@@ -3,7 +3,7 @@ module gop
 
 import limine
 
-@[_linker_section: '.requests']
+@[_linker_section: '.limine_requests']
 @[cinit]
 __global (
 	volatile framebuffer_request = limine.FramebufferRequest{

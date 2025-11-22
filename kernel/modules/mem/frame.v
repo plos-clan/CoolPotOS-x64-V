@@ -4,7 +4,7 @@ module mem
 import limine
 import log
 
-@[_linker_section: '.requests']
+@[_linker_section: '.limine_requests']
 @[cinit]
 __global (
 	volatile memmap_request = limine.MemmapRequest{

@@ -2,23 +2,29 @@
 module main
 
 import limine
-import arch.acpi
-import arch.apic
-import arch.cpu
-import arch.gdt
-import arch.idt
+import driver.acpi
 import driver.gop
 import driver.hpet
-import driver.mouse
 import driver.serial
 import driver.term
 import mem
 
-@[_linker_section: '.requests']
+$if amd64 {
+	import arch.amd64.cpu
+	import arch.amd64.gdt
+	import arch.amd64.idt
+	import arch.amd64.apic
+	import driver.mouse
+} $else {
+	import arch.loongarch64.cpu
+	import arch.loongarch64.int
+}
+
+@[_linker_section: '.limine_requests']
 @[cinit]
 __global (
 	volatile base_revision = limine.BaseRevision{
-		revision: 3
+		revision: 4
 	}
 )
 
@@ -27,24 +33,32 @@ pub fn main() {
 		for {}
 	}
 
-	gop.init()
-	serial.init()
-	gdt.init()
-	idt.init()
+	$if amd64 {
+		gdt.init()
+		idt.init()
+	} $else {
+		int.init()
+	}
 
 	mem.init_hhdm()
 	mem.init_frame()
 	mem.init_paging()
 	mem.init_heap()
 
+	gop.init()
+	serial.init()
+
 	term.init()
 	acpi.init()
 	hpet.init()
-	apic.init()
-	mouse.init()
-	cpu.sti()
+
+	$if amd64 {
+		apic.init()
+		mouse.init()
+		cpu.sti()
+	}
 
 	for {
-		cpu.hlt()
+		cpu.hcf()
 	}
 }

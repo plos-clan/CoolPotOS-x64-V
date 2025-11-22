@@ -2,7 +2,7 @@ module mem
 
 #include "alloc.h"
 
-const heap_start = u64(0x114514000000)
+const heap_start = u64(0xffffc00000000000)
 const heap_size = 8 * 1024 * 1024
 
 fn C.heap_init(address &u8, size usize) bool

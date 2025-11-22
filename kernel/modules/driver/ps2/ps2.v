@@ -1,6 +1,6 @@
 module ps2
 
-import arch.cpu { port_in, port_out }
+import arch.amd64.cpu { port_in, port_out }
 
 const command_port = 0x64
 const data_port = 0x60
