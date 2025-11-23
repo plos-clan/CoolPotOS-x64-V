@@ -2,7 +2,6 @@
 module mem
 
 import limine
-import log
 
 @[_linker_section: '.limine_requests']
 @[cinit]
@@ -50,7 +49,7 @@ pub fn init_frame() {
 		return
 	}
 
-	mut bitmap:= Bitmap.init(&u8(phys_to_virt(bitmap_address)), bitmap_size)
+	mut bitmap := Bitmap.init(&u8(phys_to_virt(bitmap_address)), bitmap_size)
 
 	mut origin_frames := u64(0)
 	for i := 0; i < memory_map.entry_count; i++ {
@@ -68,13 +67,10 @@ pub fn init_frame() {
 	bitmap.set_range(bitmap_frame_start, bitmap_frame_start + bitmap_frame_count, false)
 
 	frame_allocator = FrameAllocator{
-		bitmap: bitmap,
-		origin_frames: origin_frames,
+		bitmap:        bitmap
+		origin_frames: origin_frames
 		usable_frames: origin_frames - bitmap_frame_count
 	}
-
-	available_memory := origin_frames / 256
-	log.info(c'Available memory: %lld MiB', available_memory)
 }
 
 pub fn alloc_frames(count usize) ?usize {

@@ -2,7 +2,6 @@
 module mem
 
 import limine
-import log
 
 @[_linker_section: '.limine_requests']
 @[cinit]

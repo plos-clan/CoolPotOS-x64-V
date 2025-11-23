@@ -3,7 +3,6 @@ module acpi
 
 import limine
 import log
-import mem
 
 __global (
 	rsdp     &Rsdp
@@ -42,21 +41,19 @@ struct GenericAddress {
 }
 
 pub fn init() {
-	// flags := mem.MappingType.kernel_data.flags()
-
 	rsdp = unsafe { &Rsdp(rsdp_request.response.address) }
 	use_xsdt = rsdp.revision != 0
 	log.debug(c'ACPI revision: %d', rsdp.revision)
 
-	// rsdt_addr := if use_xsdt { u64(rsdp.xsdt_address) } else { rsdp.rsdt_address }
-	// root_sdt = RootSdt.init(rsdt_addr)
-	// log.debug(c'ACPI root SDT at %#p', rsdt_addr)
+	rsdt_addr := if use_xsdt { u64(rsdp.xsdt_address) } else { rsdp.rsdt_address }
+	root_sdt = RootSdt.init(rsdt_addr)
+	log.debug(c'ACPI root SDT at %#p', rsdt_addr)
 
-	// madt_ptr := root_sdt.find_sdt(c'APIC') or { return }
-	// log.debug(c'Found MADT at 0x%p', usize(madt_ptr))
-	// init_madt(madt_ptr)
+	madt_ptr := root_sdt.find_sdt(c'APIC') or { return }
+	log.debug(c'Found MADT at 0x%p', usize(madt_ptr))
+	init_madt(madt_ptr)
 
-	// hpet_ptr := root_sdt.find_sdt(c'HPET') or { return }
-	// log.debug(c'Found HPET at 0x%p', usize(hpet_ptr))
-	// hpet_init(hpet_ptr)
+	hpet_ptr := root_sdt.find_sdt(c'HPET') or { return }
+	log.debug(c'Found HPET at 0x%p', usize(hpet_ptr))
+	hpet_init(hpet_ptr)
 }

@@ -6,7 +6,7 @@ import ps2
 import sync { Queue }
 
 __global (
-  mouse Mouse
+	mouse       Mouse
 	mouse_queue Queue[MouseEvent]
 )
 
@@ -18,9 +18,9 @@ pub enum MouseType {
 
 fn (type MouseType) name() &char {
 	return match type {
-		.standard { c"Standard" }
-		.only_scroll { c"OnlyScroll" }
-		.five_button { c"FiveButton" }
+		.standard { c'Standard' }
+		.only_scroll { c'OnlyScroll' }
+		.five_button { c'FiveButton' }
 	}
 }
 
@@ -36,7 +36,7 @@ pub fn init() ? {
 	ps2.send_command(0xf4)?
 	mouse.mouse_type = mouse.identify_type()?
 	mouse_queue = Queue.new[MouseEvent](1024)
-	log.info(c"Mouse: %s", mouse.mouse_type.name())
+	log.info(c'Mouse: %s', mouse.mouse_type.name())
 }
 
 pub fn process_packet(packet u8) {

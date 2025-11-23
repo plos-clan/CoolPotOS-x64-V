@@ -2,7 +2,7 @@ module sync
 
 $if amd64 {
 	import arch.amd64.cpu
-} $else $if loongarch64 {
+} $else {
 	import arch.loongarch64.cpu
 }
 

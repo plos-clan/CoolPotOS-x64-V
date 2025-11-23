@@ -1,10 +1,8 @@
 @[has_globals]
 module hpet
 
-$if amd64 {
-	import arch.amd64.cpu
-	import arch.amd64.apic
-}
+import arch.amd64.apic
+import arch.amd64.cpu
 import log
 import mem
 

@@ -23,7 +23,7 @@ pub fn vprint(fmt voidptr, ap C.va_list) {
 		serial.write(&buf[0])
 	}
 
-	// for i := 0; buf[i]; i++ {
-	// 	term_buffer.push(buf[i])
-	// }
+	for i := 0; buf[i]; i++ {
+		term_buffer.push(buf[i])
+	}
 }

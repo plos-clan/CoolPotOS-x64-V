@@ -1,9 +1,8 @@
 ARCH ?= x86_64
-OS_NAME := CoolPotOS
 BUILD_DIR = build
-OUTPUT_IMG = $(BUILD_DIR)/$(OS_NAME)-$(ARCH).img
+OUTPUT_IMG = $(BUILD_DIR)/CoolPotOS-$(ARCH).img
 
-CFLAGS = -w -O0 -I./kernel/c -Ilibs -g -nostdinc
+CFLAGS = -w -O3 -I./kernel/c -Ilibs -g -nostdinc
 CFLAGS += -ffunction-sections -fdata-sections -fno-stack-protector
 
 VFLAGS = -w -manualfree -gc none -no-builtin -no-preludes
@@ -27,7 +26,7 @@ ifeq ($(ARCH), x86_64)
 else ifeq ($(ARCH), loongarch64)
 	CFLAGS += -target loongarch64-unknown-none
 	CFLAGS += -mcmodel=medium -msoft-float
-	QEMUFLAGS += -M virt -cpu la464 -device ramfb -d in_asm,int
+	QEMUFLAGS += -M virt -cpu la464 -device ramfb
 	QEMUFLAGS += -device qemu-xhci -device usb-kbd -device usb-mouse
 	VFLAGS += -arch loongarch64
 	EFI_NAME := BOOTLOONGARCH64.EFI

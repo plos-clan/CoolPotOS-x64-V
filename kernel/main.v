@@ -4,7 +4,6 @@ module main
 import limine
 import driver.acpi
 import driver.gop
-import driver.hpet
 import driver.serial
 import driver.term
 import mem
@@ -14,6 +13,7 @@ $if amd64 {
 	import arch.amd64.gdt
 	import arch.amd64.idt
 	import arch.amd64.apic
+	import driver.hpet
 	import driver.mouse
 } $else {
 	import arch.loongarch64.cpu
@@ -50,9 +50,9 @@ pub fn main() {
 
 	term.init()
 	acpi.init()
-	hpet.init()
 
 	$if amd64 {
+		hpet.init()
 		apic.init()
 		mouse.init()
 		cpu.sti()

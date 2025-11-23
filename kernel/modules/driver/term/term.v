@@ -1,7 +1,6 @@
 @[has_globals]
 module term
 
-// import beep
 import sync { Queue }
 // import mouse { MouseEventScroll }
 
@@ -13,11 +12,11 @@ __global (
 pub fn update() {
 	mut need_flush := false
 
-	// for {
-	// 	sc := ksc_queue.pop() or { break }
-	// 	C.terminal_handle_keyboard(sc)
-	// 	need_flush = true
-	// }
+	for {
+		sc := ksc_queue.pop() or { break }
+		C.terminal_handle_keyboard(sc)
+		need_flush = true
+	}
 
 	// for {
 	// 	ev := mouse_queue.pop() or { break }
@@ -64,7 +63,6 @@ pub fn init() {
 	C.terminal_set_auto_flush(false)
 	C.terminal_set_crnl_mapping(true)
 	C.terminal_set_scroll_speed(5)
-	// C.terminal_set_bell_handler(|| beep.play(750, 100))
 	C.terminal_set_pty_writer(pty_writer)
 
 	ksc_queue = Queue.new[u8](128)

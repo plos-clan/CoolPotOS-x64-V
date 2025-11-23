@@ -4,7 +4,7 @@ module apic
 import cpu
 
 __global (
-	lapic Lapic
+	lapic  Lapic
 	ioapic IoApic
 )
 
