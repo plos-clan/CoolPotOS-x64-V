@@ -17,7 +17,7 @@ $if amd64 {
 	import driver.mouse
 } $else {
 	import arch.loongarch64.cpu
-	import arch.loongarch64.int
+	import arch.loongarch64.trap
 }
 
 @[_linker_section: '.limine_requests']
@@ -37,7 +37,7 @@ pub fn main() {
 		gdt.init()
 		idt.init()
 	} $else {
-		int.init()
+		trap.init()
 	}
 
 	mem.init_hhdm()

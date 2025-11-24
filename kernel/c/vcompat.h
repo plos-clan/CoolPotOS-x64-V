@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #define _MOV
+#define VV_EXP extern
 #define VV_LOC static
 #define E_STRUCT 0
 #define E_STRUCT_DECL unsigned char _padding

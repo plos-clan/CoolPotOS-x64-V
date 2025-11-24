@@ -11,6 +11,39 @@ pub fn read_crmd() u64 {
 	return val
 }
 
+pub fn read_estat() u64 {
+	mut val := u64(0)
+	unsafe {
+		asm volatile loongarch64 {
+			csrrd val, 0x5
+			; =r (val)
+		}
+	}
+	return val
+}
+
+pub fn read_era() u64 {
+	mut val := u64(0)
+	unsafe {
+		asm volatile loongarch64 {
+			csrrd val, 0x6
+			; =r (val)
+		}
+	}
+	return val
+}
+
+pub fn read_badv() u64 {
+	mut val := u64(0)
+	unsafe {
+		asm volatile loongarch64 {
+			csrrd val, 0x7
+			; =r (val)
+		}
+	}
+	return val
+}
+
 pub fn read_pgdh() u64 {
 	mut val := u64(0)
 	unsafe {
