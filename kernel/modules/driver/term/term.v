@@ -2,29 +2,13 @@
 module term
 
 import sync { Queue }
-// import mouse { MouseEventScroll }
 
 __global (
-	ksc_queue   Queue[u8]
 	term_buffer Queue[char]
 )
 
 pub fn update() {
 	mut need_flush := false
-
-	for {
-		sc := ksc_queue.pop() or { break }
-		C.terminal_handle_keyboard(sc)
-		need_flush = true
-	}
-
-	// for {
-	// 	ev := mouse_queue.pop() or { break }
-	// 	if ev is MouseEventScroll {
-	// 		C.terminal_handle_mouse_scroll(ev.delta)
-	// 	}
-	// 	need_flush = true
-	// }
 
 	for {
 		ch := term_buffer.pop() or { break }
@@ -38,11 +22,11 @@ pub fn update() {
 }
 
 fn pty_writer(buf &u8) {
-  unsafe {
-    for i := 0; buf[i]; i++ {
-      term_buffer.push(buf[i])
-    }
-  }
+	unsafe {
+		for i := 0; buf[i]; i++ {
+			term_buffer.push(buf[i])
+		}
+	}
 }
 
 pub fn init() {
@@ -65,6 +49,5 @@ pub fn init() {
 	C.terminal_set_scroll_speed(5)
 	C.terminal_set_pty_writer(pty_writer)
 
-	ksc_queue = Queue.new[u8](128)
 	term_buffer = Queue.new[char](4096)
 }

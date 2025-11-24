@@ -14,6 +14,7 @@ LDFLAGS += -Llibs/$(ARCH) -los_terminal -lalloc
 QEMUFLAGS = -no-reboot -serial stdio
 QEMUFLAGS += -drive if=pflash,format=raw,file=assets/firmware/$(ARCH).fd
 QEMUFLAGS += -device nvme,drive=disk,serial=deadbeef
+QEMUFLAGS += -device qemu-xhci -device usb-kbd -device usb-mouse
 QEMUFLAGS += -drive if=none,id=disk,format=raw,file=$(OUTPUT_IMG)
 
 ifeq ($(ARCH), x86_64)
@@ -27,7 +28,6 @@ else ifeq ($(ARCH), loongarch64)
 	CFLAGS += -target loongarch64-unknown-none
 	CFLAGS += -mcmodel=medium -msoft-float
 	QEMUFLAGS += -M virt -cpu la464 -device ramfb
-	QEMUFLAGS += -device qemu-xhci -device usb-kbd -device usb-mouse
 	VFLAGS += -arch loongarch64
 	EFI_NAME := BOOTLOONGARCH64.EFI
 else

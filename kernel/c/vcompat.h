@@ -7,7 +7,9 @@
 #define VV_LOC static
 #define E_STRUCT 0
 #define E_STRUCT_DECL unsigned char _padding
+#define VNORETURN __attribute__((noreturn))
 #define __IRQHANDLER __attribute__((interrupt))
+#define VUNREACHABLE() do { __builtin_unreachable(); } while (0)
 
 #if defined(__x86_64__) || defined(_M_AMD64)
 	#define __V_amd64  1

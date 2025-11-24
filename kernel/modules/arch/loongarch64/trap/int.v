@@ -20,7 +20,7 @@ fn trap_handler() {
 
 	if ecode == 0 {
 		if (estat & csr_estat_is_ti) != 0 {
-		  term.update()
+			term.update()
 			cpu.write_ticlr(1)
 		} else {
 			log.warn(c'Unknown interrupt! Estat: %#x', estat)

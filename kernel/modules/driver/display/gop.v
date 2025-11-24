@@ -1,5 +1,5 @@
 @[has_globals]
-module gop
+module display
 
 import limine
 

@@ -40,7 +40,5 @@ fn (mut self IoApic) init() {
 	kernel_page_table.map_range_to(ioapic_addr, 0x1000, flags)
 	self.base_addr = mem.phys_to_virt(ioapic_addr)
 
-	self.add_entry(u8(idt.InterruptIndex.keyboard), u8(IrqVector.keyboard))
-	self.add_entry(u8(idt.InterruptIndex.mouse), u8(IrqVector.mouse))
 	self.add_entry(u8(idt.InterruptIndex.hpet_timer), u8(IrqVector.hpet_timer))
 }

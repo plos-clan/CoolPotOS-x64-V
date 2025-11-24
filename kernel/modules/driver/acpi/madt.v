@@ -49,24 +49,21 @@ struct MadtIoApicISO {
 }
 
 fn init_madt(table_addr voidptr) {
-	mut current := u64(0)
 	madt := unsafe { &Madt(table_addr) }
-
 	lapic_addr = madt.lapic_addr
 
-	for {
-		if current + (sizeof(Madt) - 1) >= madt.header.length {
-			break
-		}
+	mut cursor := usize(table_addr) + sizeof(Madt)
+	end_addr := usize(table_addr) + madt.header.length
 
-		header := &MadtHeader(u64(&madt.ptrs_start) + current)
+	for cursor < end_addr {
+		entry := &MadtHeader(cursor)
 
-		if header.entry_type == 1 {
-			ioapic := &MadtIoApic(u64(&madt.ptrs_start) + current)
+		if entry.entry_type == 1 {
+			ioapic := &MadtIoApic(cursor)
 			ioapic_addr = ioapic.address
 		}
 
-		current += u64(header.length)
+		cursor += entry.length
 	}
 
 	log.debug(c'Local APIC address: %#p', lapic_addr)

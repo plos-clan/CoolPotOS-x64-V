@@ -59,3 +59,14 @@ pub fn println(fmt voidptr, ...) {
 	C.va_end(ap)
 	print(c'\n')
 }
+
+@[noreturn]
+pub fn panic(fmt voidptr, ...) {
+	print(c'[\033[31mPANIC\033[0m] ')
+	ap := C.va_list{}
+	C.va_start(ap, fmt)
+	vprint(fmt, ap)
+	C.va_end(ap)
+	print(c'\n')
+	for {}
+}

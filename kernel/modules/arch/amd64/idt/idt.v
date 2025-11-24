@@ -28,8 +28,6 @@ pub mut:
 
 pub enum InterruptIndex {
 	timer = 32
-	keyboard
-	mouse
 	hpet_timer
 }
 
@@ -67,8 +65,6 @@ pub fn init() {
 	register_handler(14, &page_fault, 0, 0x8e)
 
 	register_handler(u16(InterruptIndex.timer), &timer_handler, 0, 0x8e)
-	register_handler(u16(InterruptIndex.keyboard), &keyboard_handler, 0, 0x8e)
-	register_handler(u16(InterruptIndex.mouse), &mouse_handler, 0, 0x8e)
 	register_handler(u16(InterruptIndex.hpet_timer), &hpet_timer_handler, 0, 0x8e)
 
 	log.success(c'Interrupt Descriptor Table loaded')

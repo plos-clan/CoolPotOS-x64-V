@@ -49,11 +49,22 @@ pub fn init() {
 	root_sdt = RootSdt.init(rsdt_addr)
 	log.debug(c'ACPI root SDT at %#p', rsdt_addr)
 
-	madt_ptr := root_sdt.find_sdt(c'APIC') or { return }
-	log.debug(c'Found MADT at 0x%p', usize(madt_ptr))
-	init_madt(madt_ptr)
+	mcfg_ptr := root_sdt.find_sdt(c'MCFG') or { return }
+	log.debug(c'Found MCFG at 0x%p', usize(mcfg_ptr))
+	init_mcfg(mcfg_ptr)
 
-	hpet_ptr := root_sdt.find_sdt(c'HPET') or { return }
-	log.debug(c'Found HPET at 0x%p', usize(hpet_ptr))
-	hpet_init(hpet_ptr)
+	$if amd64 {
+		madt_ptr := root_sdt.find_sdt(c'APIC') or { return }
+		log.debug(c'Found MADT at 0x%p', usize(madt_ptr))
+		init_madt(madt_ptr)
+
+		hpet_ptr := root_sdt.find_sdt(c'HPET') or { return }
+		log.debug(c'Found HPET at 0x%p', usize(hpet_ptr))
+		hpet_init(hpet_ptr)
+	}
+
+	$if loongarch64 {
+		spcr_ptr := root_sdt.find_sdt(c'SPCR') or { return }
+		spcr_init(spcr_ptr)
+	}
 }

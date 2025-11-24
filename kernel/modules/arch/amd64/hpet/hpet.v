@@ -1,8 +1,8 @@
 @[has_globals]
 module hpet
 
-import arch.amd64.apic
-import arch.amd64.cpu
+import apic
+import cpu
 import log
 import mem
 

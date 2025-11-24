@@ -1,3 +1,4 @@
+@[has_globals]
 module serial
 
 $if amd64 {
@@ -37,12 +38,12 @@ $if amd64 {
 		}
 	}
 } $else {
-	const uart_phys_base = u64(0x1fe001e0)
+	__global serial_init = false
 
 	pub fn init() {
 		flags := mem.MappingType.kernel_data.flags()
-		kernel_page_table.map_range_to(uart_phys_base, 0x1000, flags)
-		base_addr := &u8(mem.phys_to_virt(uart_phys_base))
+		kernel_page_table.map_range_to(uart_addr, 0x1000, flags)
+		base_addr := &u8(mem.phys_to_virt(uart_addr))
 
 		mmio_out[u8](base_addr + 1, 0x00)
 		mmio_out[u8](base_addr + 3, 0x80)
@@ -59,10 +60,15 @@ $if amd64 {
 		}
 
 		mmio_out[u8]((base_addr + 4), 0x0f)
+		serial_init = true
 	}
 
 	pub fn write(s &u8) {
-		base_addr := &u8(mem.phys_to_virt(uart_phys_base))
+		if !serial_init {
+			return
+		}
+
+		base_addr := &u8(mem.phys_to_virt(uart_addr))
 		unsafe {
 			for i := 0; s[i] != 0; i++ {
 				for mmio_in[u8]((base_addr + 5)) & 0x20 == 0 {}

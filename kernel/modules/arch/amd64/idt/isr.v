@@ -2,8 +2,6 @@ module idt
 
 import cpu
 import log
-import driver.mouse
-import driver.ps2
 import driver.term
 
 @[irq_handler]
@@ -59,18 +57,4 @@ fn timer_handler(frame &InterruptFrame) {
 fn hpet_timer_handler(frame &InterruptFrame) {
 	log.debug(c'Hpet Timer interrupt!')
 	lapic.eoi()
-}
-
-@[irq_handler]
-fn keyboard_handler(frame &InterruptFrame) {
-	defer { lapic.eoi() }
-	scancode := ps2.read_data() or { return }
-	ksc_queue.push(scancode)
-}
-
-@[irq_handler]
-fn mouse_handler(frame &InterruptFrame) {
-	defer { lapic.eoi() }
-	packet := ps2.read_data() or { return }
-	mouse.process_packet(packet)
 }

@@ -3,7 +3,8 @@ module main
 
 import limine
 import driver.acpi
-import driver.gop
+import driver.display
+import driver.pcie
 import driver.serial
 import driver.term
 import mem
@@ -13,8 +14,7 @@ $if amd64 {
 	import arch.amd64.gdt
 	import arch.amd64.idt
 	import arch.amd64.apic
-	import driver.hpet
-	import driver.mouse
+	import arch.amd64.hpet
 } $else {
 	import arch.loongarch64.cpu
 	import arch.loongarch64.trap
@@ -33,6 +33,14 @@ pub fn main() {
 		for {}
 	}
 
+	mem.init_hhdm()
+	mem.init_frame()
+	mem.init_paging()
+	mem.init_heap()
+
+	acpi.init()
+	serial.init()
+
 	$if amd64 {
 		gdt.init()
 		idt.init()
@@ -40,21 +48,13 @@ pub fn main() {
 		trap.init()
 	}
 
-	mem.init_hhdm()
-	mem.init_frame()
-	mem.init_paging()
-	mem.init_heap()
-
-	gop.init()
-	serial.init()
-
+	display.init()
 	term.init()
-	acpi.init()
+	pcie.init()
 
 	$if amd64 {
 		hpet.init()
 		apic.init()
-		mouse.init()
 		cpu.sti()
 	}
 
