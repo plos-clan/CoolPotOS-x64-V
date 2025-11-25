@@ -1,7 +1,7 @@
 @[has_globals]
 module term
 
-import sync { Queue }
+import utils { Queue }
 
 __global (
 	term_buffer Queue[char]

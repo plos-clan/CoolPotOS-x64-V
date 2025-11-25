@@ -1,4 +1,4 @@
-module sync
+module utils
 
 $if amd64 {
 	import arch.amd64.cpu

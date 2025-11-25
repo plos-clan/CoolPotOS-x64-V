@@ -1,3 +1,4 @@
+@[has_globals]
 module pcie
 
 $if amd64 {
@@ -8,6 +9,11 @@ $if amd64 {
 
 import log
 import mem
+import utils { Vec }
+
+__global (
+	pci_devices Vec[PciDevice]
+)
 
 pub fn init() {
 	flags := mem.MappingType.kernel_data.flags()
@@ -78,10 +84,11 @@ fn scan_function(address PciAddress) {
 				sub_class:   sub_class
 				revision:    u8(class_rev)
 				device_type: device_type
-				bars:        read_endpoint_bars(base_addr)
+				bars:        PciBar.scan(base_addr)
 			}
 
 			device.print_info()
+			pci_devices.push(device)
 		}
 		0x01 {
 			secondary_bus := mmio_in[u8](&u8(base_addr + 0x19))
@@ -93,37 +100,4 @@ fn scan_function(address PciAddress) {
 		}
 		else {}
 	}
-}
-
-fn read_endpoint_bars(base_addr u64) [6]u64 {
-	mut bars := [6]u64{}
-	mut skip_next := false
-
-	for i in 0 .. 6 {
-		if skip_next {
-			skip_next = false
-			continue
-		}
-
-		offset := u64(0x10) + (i * 4)
-		val := mmio_in[u32](&u32(base_addr + offset))
-
-		if val == 0 {
-			continue
-		}
-
-		is_io := (val & 1) != 0
-		is_mem := !is_io
-		is_64bit := is_mem && (val & 0x06) == 0x04
-
-		if is_64bit {
-			high := mmio_in[u32](&u32(base_addr + offset + 4))
-			bars[i] = (u64(high) << 32) | u64(val & ~u32(0xf))
-			skip_next = true
-		} else {
-			mask := if is_mem { ~u32(0xf) } else { ~u32(0x3) }
-			bars[i] = u64(val & mask)
-		}
-	}
-	return bars
 }

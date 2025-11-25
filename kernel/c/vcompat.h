@@ -2,7 +2,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#define _MOV
 #define VV_EXP extern
 #define VV_LOC static
 #define E_STRUCT 0
@@ -29,15 +28,10 @@ typedef uint64_t u64;
 typedef size_t usize;
 typedef ptrdiff_t isize;
 typedef u8 byte;
-typedef int64_t int_literal;
 typedef void* voidptr;
 
 bool _us64_gt(uint64_t a, int64_t b) {
     return a > INT64_MAX || (int64_t)a > b;
-}
-
-void* builtin__memdup(void* src, usize _size) {
-    return src;
 }
 
 typedef struct {} IError;
@@ -52,13 +46,4 @@ typedef struct _option {
 void builtin___option_ok(void* data, _option* option, int size) {
     option->state = 0;
     memcpy(((u8*)(&option->err)) + sizeof(IError), data, size);
-}
-
-typedef struct array {
-    int len;
-    void* data;
-} array;
-
-array builtin__new_array_from_c_array(int len, int, int, void* arr) {
-	return (array){.len = len, .data = arr};
 }

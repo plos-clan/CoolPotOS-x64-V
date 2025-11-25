@@ -7,6 +7,7 @@ import driver.display
 import driver.pcie
 import driver.serial
 import driver.term
+import driver.xhci
 import mem
 
 $if amd64 {
@@ -51,6 +52,7 @@ pub fn main() {
 	display.init()
 	term.init()
 	pcie.init()
+	xhci.init()
 
 	$if amd64 {
 		hpet.init()

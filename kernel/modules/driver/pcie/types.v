@@ -1,6 +1,6 @@
 module pcie
 
-enum PciDeviceType {
+pub enum PciDeviceType {
 	unknown
 	ide_controller
 	sata_controller

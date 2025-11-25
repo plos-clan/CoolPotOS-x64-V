@@ -5,3 +5,9 @@ pub fn hcf() {
 		idle 0
 	}
 }
+
+pub fn spin_hint() {
+	asm volatile amd64 {
+		dbar 0
+	}
+}

@@ -18,6 +18,12 @@ pub fn hcf() {
 	}
 }
 
+pub fn spin_hint() {
+	asm volatile amd64 {
+		pause
+	}
+}
+
 pub fn interrupt_state() bool {
 	mut f := u64(0)
 	asm volatile amd64 {

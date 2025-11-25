@@ -11,11 +11,11 @@ pub:
 	sub_class   u8
 	revision    u8
 	device_type PciDeviceType
-	bars        [6]u64
+	bars        [6]PciBar
 }
 
 pub fn (device &PciDevice) print_info() {
-	log.debug(
+	log.info(
 		c'%02x:%02x.%x: %s [%04x:%04x] (rev: %02x)',
 		device.address.bus(),
 		device.address.device(),

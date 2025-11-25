@@ -5,3 +5,4 @@ module prelude
 
 fn C.memset(voidptr, isize, usize)
 fn C.memcmp(voidptr, voidptr, usize) int
+fn C.memcpy(voidptr, voidptr, usize) voidptr
