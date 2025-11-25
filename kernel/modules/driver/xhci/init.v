@@ -23,6 +23,7 @@ fn init_controller(base_addr usize) {
 	xhci.op.start()
 	log.info(c'xHCI Initialized successfully')
 
+	xhci.test_command_ring() or { return }
 	xhci.check_ports()
 }
 

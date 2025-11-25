@@ -51,14 +51,15 @@ pub fn main() {
 
 	display.init()
 	term.init()
-	pcie.init()
-	xhci.init()
 
 	$if amd64 {
 		hpet.init()
 		apic.init()
 		cpu.sti()
 	}
+
+	pcie.init()
+	xhci.init()
 
 	for {
 		cpu.hcf()

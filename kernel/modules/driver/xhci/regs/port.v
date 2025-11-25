@@ -14,6 +14,8 @@ pub const port_pp = 1 << 9
 pub const port_csc = 1 << 17
 pub const port_prc = 1 << 21
 pub const port_rw1c_mask = 0xfe0000
+pub const port_speed_shift = 10
+pub const port_speed_mask = 0xf
 
 pub struct Port {
 pub:
@@ -28,8 +30,28 @@ pub fn Port.new(op_base usize, index int) Port {
 	}
 }
 
-pub fn (self Port) read_portsc() u32 {
-	return mmio_in[u32](&u32(self.base_addr))
+pub fn (p Port) is_connected() bool {
+	return (p.read_portsc() & port_ccs) != 0
+}
+
+pub fn (p Port) is_enabled() bool {
+	return (p.read_portsc() & port_ped) != 0
+}
+
+pub fn (p Port) has_connect_change() bool {
+	return (p.read_portsc() & port_csc) != 0
+}
+
+pub fn (p Port) has_reset_change() bool {
+	return (p.read_portsc() & port_prc) != 0
+}
+
+pub fn (p Port) is_in_reset() bool {
+	return (p.read_portsc() & port_pr) != 0
+}
+
+pub fn (p Port) speed_id() u32 {
+	return (p.read_portsc() >> 10) & 0xf
 }
 
 pub fn (self Port) reset() bool {
@@ -41,18 +63,8 @@ pub fn (self Port) reset() bool {
 	return true
 }
 
-pub fn (self Port) clear_change_bit(mask u32) {
-	val := self.read_portsc()
-	write_val := (val & ~u32(port_rw1c_mask)) | mask
-	mmio_out[u32](&u32(self.base_addr), write_val)
-}
-
-fn (self Port) is_connected() bool {
-	return (self.read_portsc() & port_ccs) != 0
-}
-
-fn (self Port) is_enabled() bool {
-	return (self.read_portsc() & port_ped) != 0
+fn (self Port) read_portsc() u32 {
+	return mmio_in[u32](&u32(self.base_addr))
 }
 
 fn (self Port) update_portsc(modify fn (u32) u32) {
@@ -60,4 +72,10 @@ fn (self Port) update_portsc(modify fn (u32) u32) {
 	mut safe_val := val & ~u32(port_rw1c_mask)
 	new_val := modify(safe_val)
 	mmio_out[u32](&u32(self.base_addr), new_val)
+}
+
+pub fn (self Port) clear_change_bit(mask u32) {
+	val := self.read_portsc()
+	write_val := (val & ~u32(port_rw1c_mask)) | mask
+	mmio_out[u32](&u32(self.base_addr), write_val)
 }

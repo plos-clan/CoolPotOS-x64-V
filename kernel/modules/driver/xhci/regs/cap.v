@@ -37,6 +37,10 @@ fn (self Capability) hccparams1() u32 {
 	return mmio_in[u32](&u32(self.base_addr + 0x10))
 }
 
+pub fn (self Capability) db_off() u32 {
+	return mmio_in[u32](&u32(self.base_addr + 0x14)) & ~u32(0x3)
+}
+
 pub fn (self Capability) rts_off() u32 {
 	return mmio_in[u32](&u32(self.base_addr + 0x18)) & ~u32(0x1f)
 }

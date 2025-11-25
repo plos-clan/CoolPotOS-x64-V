@@ -23,6 +23,10 @@ pub fn Interrupter.new(rt_base usize, index int) Interrupter {
 	}
 }
 
+pub fn (self Interrupter) erdp_addr() &u32 {
+	return &u32(self.base_addr + ir_erdp_off)
+}
+
 pub fn (self Interrupter) set_erstsz(size u32) {
 	mmio_out[u32](&u32(self.base_addr + ir_erstsz_off), size)
 }

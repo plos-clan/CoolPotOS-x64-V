@@ -30,6 +30,10 @@ typedef ptrdiff_t isize;
 typedef u8 byte;
 typedef void* voidptr;
 
+bool _us32_eq(uint32_t a, int32_t b) {
+	return a <= INT32_MAX && (int32_t)a == b;
+}
+
 bool _us64_gt(uint64_t a, int64_t b) {
     return a > INT64_MAX || (int64_t)a > b;
 }

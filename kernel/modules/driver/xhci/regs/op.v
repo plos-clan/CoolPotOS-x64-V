@@ -63,10 +63,6 @@ pub fn (self Operational) not_ready() bool {
 	return (self.read_usbsts() & (1 << 11)) != 0
 }
 
-fn (self Operational) has_host_system_error() bool {
-	return (self.read_usbsts() & (1 << 2)) != 0
-}
-
 pub fn (self Operational) set_max_slots_enabled(num u8) {
 	val := self.read_config() & ~u32(0xFF)
 	self.write_config(val | u32(num))
