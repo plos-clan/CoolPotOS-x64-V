@@ -7,6 +7,8 @@ $if amd64 {
 	import arch.loongarch64.cpu
 }
 
+import log
+
 $if amd64 {
 	const pte_present = u64(1) << 0
 	const pte_writable = u64(1) << 1
@@ -145,17 +147,31 @@ pub fn (table PageMapper) unmap(addr u64) ? {
 	cpu.invlpg(addr)
 }
 
-pub fn (mapper PageMapper) alloc_range(start u64, length u64, flags u64) {
-	for addr := start; addr <= start + length - 1; addr += 0x1000 {
-		frame := alloc_frames(1) or { 0 }
-		mapper.map_to(addr, u64(frame), flags)
+pub fn (self PageMapper) alloc_dma(page_count u64) (u64, u64) {
+	phys_addr := u64(alloc_frames(page_count) or {
+		log.panic(c'Failed to allocate %d frames', page_count)
+	})
+
+	virt_addr := phys_to_virt(phys_addr)
+	flags := MappingType.kernel_data.flags()
+
+	self.map_range_to(phys_addr, page_count * 0x1000, flags)
+	C.memset(voidptr(virt_addr), 0, usize(page_count * 0x1000))
+
+	return virt_addr, phys_addr
+}
+
+pub fn (self PageMapper) alloc_range(start u64, len u64, flags u64) {
+	for addr := start; addr <= start + len - 1; addr += 0x1000 {
+		phys_addr := alloc_frames(1) or { return }
+		self.map_to(addr, u64(phys_addr), flags)
 	}
 }
 
-pub fn (mapper PageMapper) map_range_to(frame u64, length u64, flags u64) {
-	for offset := u64(0); offset < length; offset += 0x1000 {
+pub fn (self PageMapper) map_range_to(frame u64, len u64, flags u64) {
+	for offset := u64(0); offset < len; offset += 0x1000 {
 		virt_addr := phys_to_virt(frame + offset)
-		mapper.map_to(virt_addr, frame + offset, flags)
+		self.map_to(virt_addr, frame + offset, flags)
 	}
 }
 
