@@ -40,7 +40,7 @@ pub fn (self Hpet) set_timer(value u64) {
 }
 
 pub fn init() {
-	flags := mem.MappingType.kernel_data.flags()
+	flags := mem.MappingType.mmio_region.flags()
 	kernel_page_table.map_range_to(hpet_addr, 0x1000, flags)
 	hpet.base_addr = mem.phys_to_virt(hpet_addr)
 

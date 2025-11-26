@@ -36,7 +36,7 @@ pub fn init() {
 		}
 
 		bar := device.bars[0]
-		flags := mem.MappingType.kernel_data.flags()
+		flags := mem.MappingType.mmio_region.flags()
 		kernel_page_table.map_range_to(bar.address, bar.size, flags)
 
 		init_controller(mem.phys_to_virt(bar.address))

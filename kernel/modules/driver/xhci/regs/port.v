@@ -1,9 +1,9 @@
 module regs
 
 $if amd64 {
-	import arch.amd64.cpu { mmio_in, mmio_out }
+	import arch.amd64.cpu
 } $else {
-	import arch.loongarch64.cpu { mmio_in, mmio_out }
+	import arch.loongarch64.cpu
 }
 
 pub const port_ccs = 1 << 0
@@ -64,18 +64,18 @@ pub fn (self Port) reset() bool {
 }
 
 fn (self Port) read_portsc() u32 {
-	return mmio_in[u32](&u32(self.base_addr))
+	return cpu.mmio_in[u32](&u32(self.base_addr))
 }
 
 fn (self Port) update_portsc(modify fn (u32) u32) {
 	val := self.read_portsc()
 	mut safe_val := val & ~u32(port_rw1c_mask)
 	new_val := modify(safe_val)
-	mmio_out[u32](&u32(self.base_addr), new_val)
+	cpu.mmio_out[u32](&u32(self.base_addr), new_val)
 }
 
 pub fn (self Port) clear_change_bit(mask u32) {
 	val := self.read_portsc()
 	write_val := (val & ~u32(port_rw1c_mask)) | mask
-	mmio_out[u32](&u32(self.base_addr), write_val)
+	cpu.mmio_out[u32](&u32(self.base_addr), write_val)
 }

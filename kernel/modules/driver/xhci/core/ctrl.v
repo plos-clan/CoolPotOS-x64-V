@@ -8,7 +8,7 @@ $if amd64 {
 	import arch.loongarch64.cpu
 }
 
-fn (self Xhci) wait_ready() bool {
+fn (self &Xhci) wait_ready() bool {
 	for _ in 0 .. 1_000_000 {
 		if !self.op.not_ready() {
 			return true
@@ -18,7 +18,7 @@ fn (self Xhci) wait_ready() bool {
 	return false
 }
 
-fn (self Xhci) wait_halted(expect_halted bool) bool {
+fn (self &Xhci) wait_halted(expect_halted bool) bool {
 	for _ in 0 .. 1_000_000 {
 		if self.op.is_halted() == expect_halted {
 			return true
@@ -28,7 +28,7 @@ fn (self Xhci) wait_halted(expect_halted bool) bool {
 	return false
 }
 
-fn (self Xhci) wait_reset_complete() bool {
+fn (self &Xhci) wait_reset_complete() bool {
 	for _ in 0 .. 1_000_000 {
 		if (self.op.read_usbcmd() & 2) == 0 {
 			return true
@@ -38,7 +38,7 @@ fn (self Xhci) wait_reset_complete() bool {
 	return false
 }
 
-pub fn (self Xhci) reset_controller() bool {
+pub fn (self &Xhci) reset_controller() bool {
 	log.debug(c'Resetting xHCI controller')
 
 	if self.op.is_running() {

@@ -15,7 +15,7 @@ __global (
 )
 
 pub fn init() {
-	flags := mem.MappingType.kernel_data.flags()
+	flags := mem.MappingType.mmio_region.flags()
 
 	for i in 0 .. pci_regions.length {
 		region := pci_regions.at(i)

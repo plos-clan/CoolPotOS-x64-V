@@ -1,9 +1,9 @@
 module regs
 
 $if amd64 {
-	import arch.amd64.cpu { mmio_in, mmio_out }
+	import arch.amd64.cpu
 } $else {
-	import arch.loongarch64.cpu { mmio_in, mmio_out }
+	import arch.loongarch64.cpu
 }
 
 pub struct Doorbell {
@@ -16,8 +16,7 @@ pub fn Doorbell.new(base_addr usize) Doorbell {
 	}
 }
 
-pub fn (self Doorbell) ring(target u8, stream_id u16) {
-	addr := self.base_addr + usize(target) * 4
-	val := (u32(stream_id) << 16) | u32(target)
-	mmio_out[u32](&u32(addr), val)
+pub fn (self Doorbell) ring(slot_id u8, dci u32) {
+	addr := self.base_addr + usize(slot_id) * 4
+	cpu.mmio_out[u32](&u32(addr), dci)
 }

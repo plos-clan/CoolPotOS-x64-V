@@ -1,4 +1,4 @@
-module prelude
+module main
 
 #include "krlibc.h"
 #include "vcompat.h"

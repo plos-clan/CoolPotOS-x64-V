@@ -1,10 +1,12 @@
 module core
 
 $if amd64 {
-	import arch.amd64.cpu { mmio_in, mmio_out }
+	import arch.amd64.cpu
 } $else {
-	import arch.loongarch64.cpu { mmio_in, mmio_out }
+	import arch.loongarch64.cpu
 }
+import mem
+import log
 
 pub struct CommandRing {
 pub mut:
@@ -130,6 +132,76 @@ pub fn (self EventRing) update_erdp() {
 	low := u32(val_to_write & 0xFFFFFFFF)
 	high := u32(val_to_write >> 32)
 
-	mmio_out[u32](self.erdp_reg, low)
-	mmio_out[u32](self.erdp_reg + 1, high)
+	cpu.mmio_out[u32](self.erdp_reg, low)
+	cpu.mmio_out[u32](self.erdp_reg + 1, high)
+}
+
+pub struct TransferRing {
+pub mut:
+	base        &Trb = unsafe { nil }
+	phys_addr   u64
+	capacity    u32
+	enqueue_idx u32
+	cycle_state bool
+}
+
+pub fn TransferRing.new() TransferRing {
+	ring_virt, ring_phys := kernel_page_table.alloc_dma(1)
+	trb_count := u32(0x1000 / sizeof(Trb))
+
+	return TransferRing{
+		base:        unsafe { &Trb(ring_virt) }
+		phys_addr:   ring_phys
+		capacity:    trb_count
+		enqueue_idx: 0
+		cycle_state: true
+	}
+}
+
+pub fn (mut self TransferRing) enqueue(trb Trb) {
+	if self.enqueue_idx == self.capacity - 1 {
+		self.link_to_start()
+	}
+
+	target_idx := self.enqueue_idx
+	mut write_trb := trb
+
+	if self.cycle_state {
+		write_trb.control |= 1
+	} else {
+		write_trb.control &= ~u32(1)
+	}
+
+	unsafe {
+		self.base[target_idx] = write_trb
+	}
+	self.enqueue_idx++
+}
+
+fn (mut self TransferRing) link_to_start() {
+	link_idx := self.enqueue_idx
+	mut link_trb := Trb{
+		param_low:  u32(self.phys_addr & 0xFFFFFFFF)
+		param_high: u32(self.phys_addr >> 32)
+		control:    (u32(trb_link) << 10) | (1 << 1)
+	}
+
+	if self.cycle_state {
+		link_trb.control |= 1
+	} else {
+		link_trb.control &= ~u32(1)
+	}
+
+	unsafe {
+		self.base[link_idx] = link_trb
+	}
+	self.enqueue_idx = 0
+	self.cycle_state = !self.cycle_state
+}
+
+pub fn (mut self TransferRing) free() {
+	if self.phys_addr != 0 {
+		virt_addr := mem.phys_to_virt(self.phys_addr)
+		kernel_page_table.dealloc_dma(virt_addr, 1)
+	}
 }

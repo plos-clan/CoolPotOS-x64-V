@@ -5,7 +5,7 @@ import limine
 import driver.acpi
 import driver.display
 import driver.pcie
-import driver.serial
+import driver.serial as _
 import driver.term
 import driver.xhci
 import mem

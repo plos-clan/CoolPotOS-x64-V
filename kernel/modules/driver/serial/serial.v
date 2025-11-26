@@ -2,70 +2,87 @@
 module serial
 
 $if amd64 {
-	import arch.amd64.cpu { port_in, port_out }
+	import arch.amd64.cpu
 } $else {
-	import arch.loongarch64.cpu { mmio_in, mmio_out }
+	import arch.loongarch64.cpu
+	import mem
 }
 
-$if amd64 {
-	const serial_port = u16(0x3f8)
+const reg_rbr = 0
+const reg_thr = 0
+const reg_ier = 1
+const reg_iir = 2
+const reg_fcr = 2
+const reg_lcr = 3
+const reg_mcr = 4
+const reg_lsr = 5
 
-	pub fn init() {
-		port_out[u8](serial_port + 1, 0x00)
-		port_out[u8](serial_port + 3, 0x80)
-		port_out[u8](serial_port + 0, 0x03)
-		port_out[u8](serial_port + 1, 0x00)
-		port_out[u8](serial_port + 3, 0x03)
-		port_out[u8](serial_port + 2, 0xc7)
-		port_out[u8](serial_port + 4, 0x0b)
-		port_out[u8](serial_port + 4, 0x1e)
-		port_out[u8](serial_port + 0, 0xae)
+__global (
+	serial Serial
+)
 
-		if port_in[u8](serial_port + 0) != 0xae {
-			return
-		}
+struct Serial {
+mut:
+	base_addr u64
+	ready     bool
+}
 
-		port_out[u8](serial_port + 4, 0x0f)
+pub fn (mut self Serial) init() {
+	$if amd64 {
+		self.base_addr = 0x3f8
+	} $else {
+		flags := mem.MappingType.mmio_region.flags()
+		kernel_page_table.map_range_to(uart_addr, 0x1000, flags)
+		self.base_addr = mem.phys_to_virt(uart_addr)
 	}
 
-	pub fn write(s &u8) {
-		unsafe {
-			for i := 0; s[i] != 0; i++ {
-				for port_in[u8](serial_port + 5) & 0x20 == 0 {}
-				port_out[u8](serial_port, s[i])
+	self.write_reg(reg_ier, 0x00)
+	self.write_reg(reg_lcr, 0x80)
+	self.write_reg(reg_thr, 0x03)
+	self.write_reg(reg_ier, 0x00)
+	self.write_reg(reg_lcr, 0x03)
+	self.write_reg(reg_fcr, 0xc7)
+	self.write_reg(reg_mcr, 0x0b)
+	self.write_reg(reg_mcr, 0x1e)
+	self.write_reg(reg_thr, 0xae)
+
+	if self.read_reg(reg_rbr) == 0xae {
+		self.write_reg(reg_mcr, 0x0f)
+		self.ready = true
+	} else {
+		self.ready = false
+	}
+}
+
+pub fn (self Serial) write(s &u8) {
+	if !self.ready {
+		return
+	}
+
+	unsafe {
+		for i := 0; s[i] != 0; i++ {
+			for self.read_reg(reg_lsr) & 0x20 == 0 {
+				cpu.spin_hint()
 			}
+			self.write_reg(reg_thr, s[i])
 		}
 	}
-} $else {
-	pub fn init() {
-		mmio_out[u8](&u8(uart_addr + 1), 0x00)
-		mmio_out[u8](&u8(uart_addr + 3), 0x80)
-		mmio_out[u8](&u8(uart_addr + 0), 0x03)
-		mmio_out[u8](&u8(uart_addr + 1), 0x00)
-		mmio_out[u8](&u8(uart_addr + 3), 0x03)
-		mmio_out[u8](&u8(uart_addr + 2), 0xc7)
-		mmio_out[u8](&u8(uart_addr + 4), 0x0b)
-		mmio_out[u8](&u8(uart_addr + 4), 0x1e)
-		mmio_out[u8](&u8(uart_addr + 0), 0xae)
+}
 
-		if mmio_in[u8](&u8(uart_addr + 0)) != 0xae {
-			return
-		}
-
-		mmio_out[u8](&u8(uart_addr + 4), 0x0f)
-		serial_init = true
+fn (s &Serial) read_reg(offset u16) u8 {
+	$if amd64 {
+		return cpu.port_in[u8](u16(s.base_addr) + offset)
+	} $else {
+		addr := &u8(s.base_addr + u64(offset))
+		return cpu.mmio_in[u8](addr)
 	}
+}
 
-	pub fn write(s &u8) {
-		if !serial_init {
-			return
-		}
-
-		unsafe {
-			for i := 0; s[i] != 0; i++ {
-				for mmio_in[u8](&u8(uart_addr + 5)) & 0x20 == 0 {}
-				mmio_out[u8](&u8(uart_addr), s[i])
-			}
-		}
+fn (s &Serial) write_reg(offset u16, val u8) {
+	$if amd64 {
+		cpu.port_out[u8](u16(s.base_addr) + offset, val)
+	} $else {
+		addr := &u8(s.base_addr + u64(offset))
+		cpu.mmio_out[u8](addr, val)
 	}
 }

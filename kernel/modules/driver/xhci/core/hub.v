@@ -35,15 +35,24 @@ fn (mut self Xhci) handle_port(port regs.Port) {
 
 	log.debug(c'Port %d connected, resetting...', port.id)
 
-	if port.reset() && self.wait_port_reset(port) {
-		speed_id := port.speed_id()
-		log.info(c'Port %d enabled (speed: %d)', port.id, speed_id)
-	} else {
+	if !port.reset() || !self.wait_port_reset(port) {
 		log.warn(c'Port %d reset failed', port.id)
+		return
+	}
+
+	speed_id := port.speed_id()
+	log.info(c'Port %d enabled (speed: %d)', port.id, speed_id)
+
+	slot_id := self.enable_slot() or { return }
+	log.info(c'Device assigned to slot %d', slot_id)
+
+	if self.address_device(port.id, slot_id, speed_id) {
+		log.success(c'Device ready for configuration')
+		self.get_device_descriptor(slot_id)
 	}
 }
 
-fn (self Xhci) wait_port_reset(port regs.Port) bool {
+fn (self &Xhci) wait_port_reset(port regs.Port) bool {
 	for _ in 0 .. 1_000_000 {
 		if port.has_reset_change() {
 			port.clear_change_bit(regs.port_prc)

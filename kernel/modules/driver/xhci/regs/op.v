@@ -28,8 +28,16 @@ pub fn (self Operational) read_usbcmd() u32 {
 	return mmio_in[u32](&u32(self.base_addr + op_usbcmd_off))
 }
 
+pub fn (self Operational) read_usbsts() u32 {
+	return mmio_in[u32](&u32(self.base_addr + op_usbsts_off))
+}
+
 fn (self Operational) write_usbcmd(val u32) {
 	mmio_out[u32](&u32(self.base_addr + op_usbcmd_off), val)
+}
+
+pub fn (self Operational) write_usbsts(val u32) {
+	mmio_out[u32](&u32(self.base_addr + op_usbsts_off), val)
 }
 
 pub fn (self Operational) start() {
@@ -49,10 +57,6 @@ pub fn (self Operational) reset() {
 
 pub fn (self Operational) is_running() bool {
 	return (self.read_usbcmd() & 1) != 0
-}
-
-fn (self Operational) read_usbsts() u32 {
-	return mmio_in[u32](&u32(self.base_addr + op_usbsts_off))
 }
 
 pub fn (self Operational) is_halted() bool {

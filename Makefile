@@ -2,7 +2,7 @@ ARCH ?= x86_64
 BUILD_DIR = build
 OUTPUT_IMG = $(BUILD_DIR)/CoolPotOS-$(ARCH).img
 
-CFLAGS = -w -O3 -I./kernel/c -Ilibs -g -nostdinc
+CFLAGS = -w -O3 -I./kernel/c -Ilibs -g -nostdinc -fno-builtin
 CFLAGS += -ffunction-sections -fdata-sections -fno-stack-protector
 
 VFLAGS = -w -manualfree -gc none -no-builtin -no-preludes

@@ -36,7 +36,7 @@ fn (self IoApic) add_entry(vector u8, irq u32) {
 }
 
 fn (mut self IoApic) init() {
-	flags := mem.MappingType.kernel_data.flags()
+	flags := mem.MappingType.mmio_region.flags()
 	kernel_page_table.map_range_to(ioapic_addr, 0x1000, flags)
 	self.base_addr = mem.phys_to_virt(ioapic_addr)
 

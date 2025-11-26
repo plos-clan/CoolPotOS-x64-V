@@ -1,7 +1,5 @@
 module log
 
-import driver.serial
-
 #define STB_SPRINTF_NOFLOAT
 #define STB_SPRINTF_IMPLEMENTATION
 #include "sprintf.h"

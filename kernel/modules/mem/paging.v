@@ -13,6 +13,7 @@ $if amd64 {
 	const pte_present = u64(1) << 0
 	const pte_writable = u64(1) << 1
 	const pte_user = u64(1) << 2
+	const pte_no_cache = u64(1) << 4
 	const pte_huge = u64(1) << 7
 	const pte_no_execute = u64(1) << 63
 	const pte_parent_flags = pte_present | pte_writable | pte_user
@@ -153,12 +154,20 @@ pub fn (self PageMapper) alloc_dma(page_count u64) (u64, u64) {
 	})
 
 	virt_addr := phys_to_virt(phys_addr)
-	flags := MappingType.kernel_data.flags()
+	flags := MappingType.mmio_region.flags()
 
 	self.map_range_to(phys_addr, page_count * 0x1000, flags)
 	C.memset(voidptr(virt_addr), 0, usize(page_count * 0x1000))
 
 	return virt_addr, phys_addr
+}
+
+pub fn (self PageMapper) dealloc_dma(virt_addr u64, page_count u64) {
+	for offset := u64(0); offset < page_count * 0x1000; offset += 0x1000 {
+		self.unmap(virt_addr + offset) or {
+			log.panic(c'Failed to deallocate %#lx', virt_addr + offset)
+		}
+	}
 }
 
 pub fn (self PageMapper) alloc_range(start u64, len u64, flags u64) {
@@ -189,22 +198,25 @@ pub fn init_paging() {
 
 pub enum MappingType {
 	user_code
-	kernel_data
 	user_data
+	mmio_region
+	kernel_data
 }
 
 pub fn (@type MappingType) flags() u64 {
 	$if amd64 {
 		return match @type {
 			.user_code { pte_present | pte_writable | pte_user }
-			.kernel_data { pte_present | pte_writable | pte_no_execute }
 			.user_data { pte_present | pte_writable | pte_user | pte_no_execute }
+			.mmio_region { pte_present | pte_writable | pte_no_cache | pte_no_execute }
+			.kernel_data { pte_present | pte_writable | pte_no_execute }
 		}
 	} $else {
 		return match @type {
 			.user_code { pte_valid | pte_dirty | pte_plv_user | pte_mat_cc }
-			.kernel_data { pte_valid | pte_dirty | pte_global | pte_mat_cc | pte_no_execute }
 			.user_data { pte_valid | pte_dirty | pte_plv_user | pte_mat_cc | pte_no_execute }
+			.mmio_region { pte_valid | pte_dirty | pte_plv_user }
+			.kernel_data { pte_valid | pte_dirty | pte_global | pte_mat_cc | pte_no_execute }
 		}
 	}
 }

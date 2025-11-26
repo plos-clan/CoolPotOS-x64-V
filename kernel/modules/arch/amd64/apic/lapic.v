@@ -63,7 +63,7 @@ pub fn (mut self Lapic) init() {
 	if self.x2apic_mode {
 		log.info(c'Using x2APIC mode (msr: 0x800)')
 	} else {
-		flags := mem.MappingType.kernel_data.flags()
+		flags := mem.MappingType.mmio_region.flags()
 		kernel_page_table.map_range_to(lapic_addr, 0x1000, flags)
 		self.base_addr = mem.phys_to_virt(lapic_addr)
 		log.info(c'Using xAPIC mode (base address: %#p)', self.base_addr)
