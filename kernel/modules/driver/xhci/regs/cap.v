@@ -57,6 +57,10 @@ pub fn (self Capability) address_64bit() bool {
 	return (self.hccparams1() & 1) != 0
 }
 
+pub fn (self Capability) context_64byte() bool {
+    return (self.hccparams1() & (1 << 2)) != 0
+}
+
 pub fn (self Capability) max_scratchpad_bufs() u32 {
 	high := (self.hcsparams2() >> 21) & 0x1f
 	low := (self.hcsparams2() >> 27) & 0x1f

@@ -2,7 +2,6 @@ module core
 
 import regs
 import log
-import mem
 
 $if amd64 {
 	import arch.amd64.cpu
@@ -19,6 +18,7 @@ pub mut:
 	event_ring EventRing
 	doorbell   regs.Doorbell
 	slots      [256]Slot
+	ctx_size   int
 }
 
 pub fn Xhci.new(base_addr usize) &Xhci {
@@ -33,6 +33,7 @@ pub fn Xhci.new(base_addr usize) &Xhci {
 
 	xhci.op = regs.Operational.new(op_base)
 	xhci.doorbell = regs.Doorbell.new(db_base)
+	xhci.ctx_size = if xhci.cap.context_64byte() { 64 } else { 32 }
 
 	return xhci
 }
@@ -67,6 +68,15 @@ fn (mut self Xhci) enable_slot() ?u8 {
 	return slot_id
 }
 
+fn (mut self Xhci) disable_slot(slot_id u8) {
+	cmd := Trb.new_disable_slot(slot_id)
+
+	self.send_command(cmd) or {
+		log.error(c'Failed to disable slot: %d', slot_id)
+		return
+	}
+}
+
 fn (mut self Xhci) send_command(trb Trb) ?(u32, u8) {
 	self.cmd_ring.enqueue(trb)
 	self.doorbell.ring(0, 0)
@@ -99,7 +109,7 @@ fn (mut self Xhci) handle_unexpected_event(evt Trb) {
 	match evt.get_type() {
 		trb_port_status_change {
 			port_id := evt.param_low >> 24
-			log.info(c'Hotplug port %d during wait', port_id)
+			log.debug(c'Hotplug port %d during wait', port_id)
 		}
 		trb_transfer_event {
 			log.warn(c'Unhandled transfer for slot %d', evt.slot_id())

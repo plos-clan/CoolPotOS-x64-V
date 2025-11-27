@@ -2,7 +2,7 @@
 module acpi
 
 __global (
-	uart_addr   u64
+	uart_addr u64
 )
 
 @[packed]

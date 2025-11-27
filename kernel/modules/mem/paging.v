@@ -6,7 +6,6 @@ $if amd64 {
 } $else {
 	import arch.loongarch64.cpu
 }
-
 import log
 
 $if amd64 {

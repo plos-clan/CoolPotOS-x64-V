@@ -6,7 +6,6 @@ $if amd64 {
 	import arch.loongarch64.cpu
 }
 import mem
-import log
 
 pub struct CommandRing {
 pub mut:

@@ -1,8 +1,9 @@
 module core
 
 import log
+import regs
 
-pub fn (mut self Xhci) address_device(port_id int, slot_id u8, speed_id u32) bool {
+pub fn (mut self Xhci) address_device(port_id int, slot_id u8, speed_id u32) ? {
 	log.debug(c'Addressing device on slot %d...', slot_id)
 
 	out_ctx_virt, out_ctx_phys := kernel_page_table.alloc_dma(1)
@@ -23,12 +24,14 @@ pub fn (mut self Xhci) address_device(port_id int, slot_id u8, speed_id u32) boo
 	in_ctx_virt, in_ctx_phys := kernel_page_table.alloc_dma(1)
 	defer { kernel_page_table.dealloc_dma(in_ctx_virt, 1) }
 
-	mut ctx := &InputContext(in_ctx_virt)
-	ctx.control.add_flags = (1 << 0) | (1 << 1)
-	ctx.slot.set_entries(1)
-	ctx.slot.set_root_hub_port(u32(port_id))
-	ctx.slot.set_route_string(0)
-	ctx.slot.set_speed(speed_id)
+	mut ctrl_ctx := InputControlContext.from(in_ctx_virt)
+	ctrl_ctx.add_flags = (1 << 0) | (1 << 1)
+
+	mut slot_ctx := SlotContext.from(in_ctx_virt, self.ctx_size)
+	slot_ctx.set_entries(1)
+	slot_ctx.set_root_hub_port(u32(port_id))
+	slot_ctx.set_route_string(0)
+	slot_ctx.set_speed(speed_id)
 
 	mps := match speed_id {
 		4 { u32(512) }
@@ -36,65 +39,24 @@ pub fn (mut self Xhci) address_device(port_id int, slot_id u8, speed_id u32) boo
 		else { u32(64) }
 	}
 
-	ctx.ep0.set_ep_type(4)
-	ctx.ep0.set_max_packet_size(mps)
-	ctx.ep0.set_max_burst_size(0)
-	ctx.ep0.set_error_count(3)
-	ctx.ep0.set_average_trb_len(8)
-	ctx.ep0.set_dequeue_ptr(ep0_ring.phys_addr | 1)
+	mut ep0_ctx := EndpointContext.from(in_ctx_virt, 1, self.ctx_size)
+	ep0_ctx.set_ep_type(4)
+	ep0_ctx.set_max_packet_size(mps)
+	ep0_ctx.set_max_burst_size(0)
+	ep0_ctx.set_error_count(3)
+	ep0_ctx.set_average_trb_len(8)
+	ep0_ctx.set_dequeue_ptr(ep0_ring.phys_addr | 1)
 
-	cmd := Trb{
-		param_low:  u32(in_ctx_phys & 0xFFFFFFFF)
-		param_high: u32(in_ctx_phys >> 32)
-		control:    (u32(trb_address_device) << 10) | (u32(slot_id) << 24)
-	}
-
+	cmd := Trb.new_address_device(in_ctx_phys, slot_id)
 	code, _ := self.send_command(cmd) or {
 		log.error(c'Address Device command timeout')
-		self.cleanup_slot_on_failure(slot_id)
-		return false
+		return none
 	}
 
 	if code != 1 {
 		log.error(c'Address Device failed code: %d', code)
-		self.cleanup_slot_on_failure(slot_id)
-		return false
+		return none
 	}
-
-	return true
-}
-
-fn (mut self Xhci) cleanup_slot_on_failure(slot_id u8) {
-	self.slots[slot_id].active = false
-
-	if self.slots[slot_id].out_ctx_virt != 0 {
-		virt_addr := self.slots[slot_id].out_ctx_virt
-		kernel_page_table.dealloc_dma(virt_addr, 1)
-		self.slots[slot_id].out_ctx_virt = unsafe { nil }
-	}
-
-	unsafe {
-		self.dcbaa_virt[slot_id] = 0
-	}
-	self.slots[slot_id].rings[1].free()
-}
-
-pub fn (mut self Xhci) set_configuration(slot_id u8, config_val u8) ? {
-	log.debug(c'Sending set configuration %d...', config_val)
-
-	setup := SetupPacket{
-		request_type: 0x00
-		request:      9
-		value:        u16(config_val)
-		index:        0
-		length:       0
-	}
-
-	self.usb_control_transfer(
-		slot_id:     slot_id
-		setup:       setup
-		buffer_phys: 0
-	)?
 }
 
 pub fn (mut self Xhci) get_device_descriptor(slot_id u8) ? {
@@ -103,8 +65,8 @@ pub fn (mut self Xhci) get_device_descriptor(slot_id u8) ? {
 
 	setup := SetupPacket{
 		request_type: 0x80
-		request:      6
-		value:        0x0100
+		request:      req_get_descriptor
+		value:        (u16(desc_device) << 8) | 0
 		index:        0
 		length:       18
 	}
@@ -125,6 +87,150 @@ pub fn (mut self Xhci) get_device_descriptor(slot_id u8) ? {
 		log.info(c'HUB Device')
 	} else {
 		log.info(c'Unknown Class: %d', desc.device_class)
+	}
+}
+
+pub fn (mut self Xhci) activate_device(slot_id u8) ? {
+	log.debug(c'Setting up endpoints for slot %d...', slot_id)
+
+	header_virt, header_phys := kernel_page_table.alloc_dma(1)
+	defer { kernel_page_table.dealloc_dma(header_virt, 1) }
+
+	setup_header := SetupPacket{
+		request_type: 0x80
+		request:      req_get_descriptor
+		value:        (u16(desc_configuration) << 8) | 0
+		index:        0
+		length:       9
+	}
+
+	self.usb_control_transfer(
+		slot_id:     slot_id
+		setup:       setup_header
+		buffer_phys: u64(header_phys)
+	)?
+
+	header := &ConfigurationDescriptor(header_virt)
+	total_len := header.total_length
+	config_val := header.configuration_value
+
+	pages_needed := (u64(total_len) + 4095) / 4096
+	config_virt, config_phys := kernel_page_table.alloc_dma(pages_needed)
+	defer { kernel_page_table.dealloc_dma(config_virt, pages_needed) }
+
+	setup_full := SetupPacket{
+		request_type: 0x80
+		request:      req_get_descriptor
+		value:        (u16(desc_configuration) << 8) | 0
+		index:        0
+		length:       total_len
+	}
+
+	self.usb_control_transfer(
+		slot_id:     slot_id
+		setup:       setup_full
+		buffer_phys: u64(config_phys)
+	)?
+
+	self.configure_endpoints(slot_id, &u8(config_virt), total_len)?
+	self.set_configuration(slot_id, config_val)?
+	log.success(c'Slot %d configured successfully', slot_id)
+}
+
+fn (mut self Xhci) configure_endpoints(slot_id u8, config_virt &u8, len u16) ? {
+	in_ctx_virt, in_ctx_phys := kernel_page_table.alloc_dma(1)
+	defer { kernel_page_table.dealloc_dma(in_ctx_virt, 1) }
+
+	mut ctrl_ctx := InputControlContext.from(in_ctx_virt)
+	ctrl_ctx.add_flags = 1
+
+	mut max_dci := u32(0)
+	mut offset := u16(0)
+
+	for offset < len {
+		desc_len := unsafe { config_virt[offset] }
+		desc_type := unsafe { config_virt[offset + 1] }
+
+		if offset + u16(desc_len) > len {
+			break
+		}
+
+		if desc_type == desc_endpoint {
+			ep_desc := &EndpointDescriptor(config_virt + offset)
+			dci := self.setup_one_endpoint(slot_id, in_ctx_virt, ep_desc) or { 0 }
+			max_dci = if dci > max_dci { dci } else { max_dci }
+		}
+
+		offset += u16(desc_len)
+	}
+
+	mut slot_ctx := SlotContext.from(in_ctx_virt, self.ctx_size)
+	slot_ctx.set_entries(max_dci)
+
+	cmd := Trb.new_configure_endpoint(in_ctx_phys, slot_id)
+	code, _ := self.send_command(cmd) or {
+		log.error(c'Configure endpoint command timeout')
+		return none
+	}
+
+	if code != 1 {
+		log.error(c'Configure endpoint failed: %d', code)
+		return none
+	}
+}
+
+fn (mut self Xhci) setup_one_endpoint(slot_id u8, ctx_base u64, desc &EndpointDescriptor) ?u32 {
+	addr := desc.endpoint_address
+	ep_num := addr & 0x0F
+	is_in := (addr & 0x80) != 0
+
+	dci := if is_in { ep_num * 2 + 1 } else { ep_num * 2 }
+
+	if dci < 2 || dci > 31 {
+		return none
+	}
+
+	mut ring := TransferRing.new()
+	self.slots[slot_id].rings[dci] = ring
+
+	attr := desc.attributes & 0x3
+	ep_type := if is_in { attr + 4 } else { attr }
+
+	mut ep_ctx := EndpointContext.from(ctx_base, dci, self.ctx_size)
+	ep_ctx.set_ep_type(ep_type)
+	ep_ctx.set_interval(u32(desc.interval))
+	ep_ctx.set_max_burst_size(0)
+	ep_ctx.set_error_count(3)
+	ep_ctx.set_dequeue_ptr(ring.phys_addr | 1)
+
+	mps := u32(desc.max_packet_size) & 0x7ff
+	ep_ctx.set_max_packet_size(mps)
+
+	avg_len := if attr == 3 { u32(1024) } else { u32(3072) }
+	ep_ctx.set_average_trb_len(avg_len)
+
+	mut ctrl_ctx := InputControlContext.from(ctx_base)
+	ctrl_ctx.add_flags |= (1 << dci)
+
+	return dci
+}
+
+pub fn (mut self Xhci) set_configuration(slot_id u8, config_val u8) ? {
+	setup := SetupPacket{
+		request_type: 0x00
+		request:      req_set_configuration
+		value:        u16(config_val)
+		index:        0
+		length:       0
+	}
+
+	self.usb_control_transfer(
+		slot_id:     slot_id
+		setup:       setup
+		buffer_phys: 0
+	) or {
+		log.error(c'Failed to send set configuration request')
+		return none
 	}
 }
 
@@ -175,4 +281,34 @@ fn (mut self Xhci) usb_control_transfer(args ControlTransfer) ? {
 		log.error(c'Control transfer failed. Code: %d', code)
 		return none
 	}
+}
+
+fn (mut self Xhci) cleanup_slot_on_failure(slot_id u8) {
+	log.debug(c'Cleaning up resources for slot %d', slot_id)
+
+	if self.slots[slot_id].active {
+		self.disable_slot(slot_id)
+	}
+	self.slots[slot_id].active = false
+
+	if self.slots[slot_id].out_ctx_virt != 0 {
+		virt_addr := self.slots[slot_id].out_ctx_virt
+		kernel_page_table.dealloc_dma(virt_addr, 1)
+		self.slots[slot_id].out_ctx_virt = unsafe { nil }
+	}
+
+	if self.dcbaa_virt != unsafe { nil } {
+		unsafe {
+			self.dcbaa_virt[slot_id] = 0
+		}
+	}
+
+	for i in 1 .. 32 {
+		if self.slots[slot_id].rings[i].phys_addr != 0 {
+			self.slots[slot_id].rings[i].free()
+			self.slots[slot_id].rings[i] = TransferRing{}
+		}
+	}
+
+	log.debug(c'Slot %d cleanup complete', slot_id)
 }
