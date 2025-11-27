@@ -1,5 +1,11 @@
 module core
 
+import common {
+	ConfigurationDescriptor,
+	DeviceDescriptor,
+	EndpointDescriptor,
+	SetupPacket,
+}
 import log
 import regs
 
@@ -64,11 +70,11 @@ pub fn (mut self Xhci) get_device_descriptor(slot_id u8) ? {
 	defer { kernel_page_table.dealloc_dma(desc_virt, 1) }
 
 	setup := SetupPacket{
-		request_type: 0x80
-		request:      req_get_descriptor
-		value:        (u16(desc_device) << 8) | 0
+		request_type: common.req_dir_in
+		request:      common.req_get_descriptor
+		value:        (u16(common.desc_device) << 8) | 0
 		index:        0
-		length:       18
+		length:       u16(sizeof(common.DeviceDescriptor))
 	}
 
 	self.usb_control_transfer(
@@ -83,7 +89,7 @@ pub fn (mut self Xhci) get_device_descriptor(slot_id u8) ? {
 
 	if desc.device_class == 0 {
 		log.info(c'Class defined in Interface Descriptors')
-	} else if desc.device_class == 9 {
+	} else if desc.device_class == common.class_hub  {
 		log.info(c'HUB Device')
 	} else {
 		log.info(c'Unknown Class: %d', desc.device_class)
@@ -97,11 +103,11 @@ pub fn (mut self Xhci) activate_device(slot_id u8) ? {
 	defer { kernel_page_table.dealloc_dma(header_virt, 1) }
 
 	setup_header := SetupPacket{
-		request_type: 0x80
-		request:      req_get_descriptor
-		value:        (u16(desc_configuration) << 8) | 0
+		request_type: common.req_dir_in
+		request:      common.req_get_descriptor
+		value:        (u16(common.desc_configuration) << 8) | 0
 		index:        0
-		length:       9
+		length:       u16(sizeof(common.ConfigurationDescriptor))
 	}
 
 	self.usb_control_transfer(
@@ -119,9 +125,9 @@ pub fn (mut self Xhci) activate_device(slot_id u8) ? {
 	defer { kernel_page_table.dealloc_dma(config_virt, pages_needed) }
 
 	setup_full := SetupPacket{
-		request_type: 0x80
-		request:      req_get_descriptor
-		value:        (u16(desc_configuration) << 8) | 0
+		request_type: common.req_dir_in
+		request:      common.req_get_descriptor
+		value:        (u16(common.desc_configuration) << 8) | 0
 		index:        0
 		length:       total_len
 	}
@@ -155,7 +161,7 @@ fn (mut self Xhci) configure_endpoints(slot_id u8, config_virt &u8, len u16) ? {
 			break
 		}
 
-		if desc_type == desc_endpoint {
+		if desc_type == common.desc_endpoint {
 			ep_desc := &EndpointDescriptor(config_virt + offset)
 			dci := self.setup_one_endpoint(slot_id, in_ctx_virt, ep_desc) or { 0 }
 			max_dci = if dci > max_dci { dci } else { max_dci }
@@ -181,8 +187,8 @@ fn (mut self Xhci) configure_endpoints(slot_id u8, config_virt &u8, len u16) ? {
 
 fn (mut self Xhci) setup_one_endpoint(slot_id u8, ctx_base u64, desc &EndpointDescriptor) ?u32 {
 	addr := desc.endpoint_address
-	ep_num := addr & 0x0F
-	is_in := (addr & 0x80) != 0
+	ep_num := addr & 0x0f
+	is_in := (addr & common.req_dir_in) != 0
 
 	dci := if is_in { ep_num * 2 + 1 } else { ep_num * 2 }
 
@@ -217,8 +223,8 @@ fn (mut self Xhci) setup_one_endpoint(slot_id u8, ctx_base u64, desc &EndpointDe
 
 pub fn (mut self Xhci) set_configuration(slot_id u8, config_val u8) ? {
 	setup := SetupPacket{
-		request_type: 0x00
-		request:      req_set_configuration
+		request_type: common.req_dir_out
+		request:      common.req_set_configuration
 		value:        u16(config_val)
 		index:        0
 		length:       0
@@ -243,7 +249,7 @@ pub:
 }
 
 fn (mut self Xhci) usb_control_transfer(args ControlTransfer) ? {
-	is_dir_in := (args.setup.request_type & 0x80) != 0
+	is_in := (args.setup.request_type & common.req_dir_in) != 0
 
 	setup, slot_id := args.setup, args.slot_id
 	setup_ptr := unsafe { &u32(&args.setup) }
@@ -252,7 +258,7 @@ fn (mut self Xhci) usb_control_transfer(args ControlTransfer) ? {
 
 	trt := match true {
 		setup.length == 0 { u32(0) }
-		is_dir_in { 3 }
+		is_in { 3 }
 		else { 2 }
 	}
 
@@ -261,11 +267,11 @@ fn (mut self Xhci) usb_control_transfer(args ControlTransfer) ? {
 	slot.rings[1].enqueue(setup_trb)
 
 	if setup.length > 0 {
-		data_trb := Trb.new_data_stage(args.buffer_phys, setup.length, is_dir_in)
+		data_trb := Trb.new_data_stage(args.buffer_phys, setup.length, is_in)
 		slot.rings[1].enqueue(data_trb)
 	}
 
-	status_dir_in := setup.length == 0 || !is_dir_in
+	status_dir_in := setup.length == 0 || !is_in
 	status_trb := Trb.new_status_stage(status_dir_in)
 	slot.rings[1].enqueue(status_trb)
 

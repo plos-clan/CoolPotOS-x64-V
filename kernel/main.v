@@ -7,7 +7,7 @@ import driver.display
 import driver.pcie
 import driver.serial as _
 import driver.term
-import driver.xhci
+import driver.usb
 import mem
 
 $if amd64 {
@@ -59,7 +59,7 @@ pub fn main() {
 	}
 
 	pcie.init()
-	xhci.init()
+	usb.init()
 
 	for {
 		cpu.hcf()

@@ -1,20 +1,4 @@
-module core
-
-pub const desc_device = 1
-pub const desc_configuration = 2
-pub const desc_string = 3
-pub const desc_interface = 4
-pub const desc_endpoint = 5
-pub const desc_hid = 0x21
-
-pub const req_get_status = 0
-pub const req_clear_feature = 1
-pub const req_set_feature = 3
-pub const req_set_address = 5
-pub const req_get_descriptor = 6
-pub const req_set_descriptor = 7
-pub const req_get_configuration = 8
-pub const req_set_configuration = 9
+module common
 
 @[packed]
 pub struct SetupPacket {

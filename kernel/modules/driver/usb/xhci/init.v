@@ -3,6 +3,7 @@ module xhci
 import core
 import mem
 import log
+import pcie
 
 fn init_controller(base_addr usize) {
 	mut xhci := core.Xhci.new(base_addr)
@@ -27,23 +28,15 @@ fn init_controller(base_addr usize) {
 	xhci.check_ports()
 }
 
-pub fn init() {
-	for i in 0 .. pci_devices.len {
-		device := pci_devices.get(i) or { continue }
+pub fn init(device &pcie.PciDevice) {
+	bar := device.bars[0]
+	flags := mem.MappingType.mmio_region.flags()
+	kernel_page_table.map_range_to(bar.address, bar.size, flags)
 
-		if device.device_type != .usb_controller {
-			continue
-		}
-
-		bar := device.bars[0]
-		flags := mem.MappingType.mmio_region.flags()
-		kernel_page_table.map_range_to(bar.address, bar.size, flags)
-
-		init_controller(mem.phys_to_virt(bar.address))
-	}
+	init_controller(mem.phys_to_virt(bar.address))
 }
 
-fn print_xhci_info(xhci core.Xhci) {
+fn print_xhci_info(xhci &core.Xhci) {
 	version := xhci.cap.version()
 	max_slots := xhci.cap.max_slots()
 	max_ports := xhci.cap.max_ports()

@@ -7,6 +7,7 @@ $if amd64 {
 	import arch.loongarch64.cpu { mmio_in, mmio_out }
 }
 
+import log
 import mem
 import utils { Vec }
 
@@ -65,6 +66,7 @@ fn scan_function(address PciAddress) {
 	class_rev := mmio_in[u32](&u32(base_addr + 0x08))
 	class_code := u8(class_rev >> 24)
 	sub_class := u8(class_rev >> 16)
+	prog_if := u8(class_rev >> 8)
 
 	header_type := mmio_in[u8](&u8(base_addr + 0x0e)) & 0x7f
 	device_type := PciDeviceType.parse(class_code, sub_class)
@@ -81,6 +83,7 @@ fn scan_function(address PciAddress) {
 				device_id:   device_id
 				class_code:  class_code
 				sub_class:   sub_class
+				prog_if:     prog_if
 				revision:    u8(class_rev)
 				device_type: device_type
 				bars:        PciBar.scan(base_addr)

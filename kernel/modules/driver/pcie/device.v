@@ -9,9 +9,10 @@ pub:
 	device_id   u16
 	class_code  u8
 	sub_class   u8
+	prog_if     u8
 	revision    u8
-	device_type PciDeviceType
 	bars        [6]PciBar
+	device_type PciDeviceType
 }
 
 pub fn (device &PciDevice) print_info() {
