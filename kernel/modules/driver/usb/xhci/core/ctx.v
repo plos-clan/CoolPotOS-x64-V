@@ -11,15 +11,15 @@ pub mut:
 @[packed]
 pub struct SlotContext {
 pub mut:
-	info1 u32
-	info2 u32
-	tt_id u32
-	state u32
-	reserved  [4]u32
+	info1    u32
+	info2    u32
+	tt_id    u32
+	state    u32
+	reserved [4]u32
 }
 
 pub fn SlotContext.from(base usize, ctx_size int) &SlotContext {
-	return unsafe { &SlotContext(&u8(base) + ctx_size) }
+	return &SlotContext(&u8(base) + ctx_size)
 }
 
 pub fn (mut s SlotContext) set_entries(count u32) {
@@ -66,12 +66,12 @@ pub fn EndpointContext.from(base usize, dci int, ctx_size int) &EndpointContext 
 	return &EndpointContext(&u8(base) + offset)
 }
 
-pub fn (mut e EndpointContext) set_ep_type(val u32) {
-	e.info1 |= (val & 0x7) << 3
-}
-
 pub fn (mut e EndpointContext) set_interval(val u32) {
 	e.info1 |= (val & 0xff) << 16
+}
+
+pub fn (mut e EndpointContext) set_ep_type(val u32) {
+	e.info2 |= (val & 0x7) << 3
 }
 
 pub fn (mut e EndpointContext) set_max_packet_size(size u32) {

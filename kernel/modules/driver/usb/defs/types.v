@@ -1,4 +1,4 @@
-module common
+module defs
 
 @[packed]
 pub struct SetupPacket {

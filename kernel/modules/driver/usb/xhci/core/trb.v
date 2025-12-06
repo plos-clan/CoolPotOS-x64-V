@@ -1,12 +1,12 @@
 module core
 
 pub const trb_cycle = 1 << 0
-pub const trb_ent   = 1 << 1
-pub const trb_isp   = 1 << 2
-pub const trb_ns    = 1 << 3
+pub const trb_ent = 1 << 1
+pub const trb_isp = 1 << 2
+pub const trb_ns = 1 << 3
 pub const trb_chain = 1 << 4
-pub const trb_ioc   = 1 << 5
-pub const trb_idt   = 1 << 6
+pub const trb_ioc = 1 << 5
+pub const trb_idt = 1 << 6
 
 pub const trb_normal = 1
 pub const trb_setup_stage = 2

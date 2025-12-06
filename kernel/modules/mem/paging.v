@@ -214,7 +214,7 @@ pub fn (@type MappingType) flags() u64 {
 		return match @type {
 			.user_code { pte_valid | pte_dirty | pte_plv_user | pte_mat_cc }
 			.user_data { pte_valid | pte_dirty | pte_plv_user | pte_mat_cc | pte_no_execute }
-			.mmio_region { pte_valid | pte_dirty | pte_plv_user }
+			.mmio_region { pte_valid | pte_dirty | pte_plv_user | pte_no_execute }
 			.kernel_data { pte_valid | pte_dirty | pte_global | pte_mat_cc | pte_no_execute }
 		}
 	}

@@ -3,10 +3,46 @@ module utils
 import log
 
 pub struct Vec[T] {
-pub mut:
-	data &T
+mut:
+	data &T = unsafe { nil }
 	len  u64
 	cap  u64
+}
+
+pub fn (self &Vec[T]) get(index u64) ?&T {
+	if index >= self.len {
+		return none
+	}
+	unsafe {
+		return &self.data[index]
+	}
+}
+
+pub fn (self &Vec[T]) first() ?&T {
+	if self.len == 0 {
+		return none
+	}
+	unsafe {
+		return &self.data[0]
+	}
+}
+
+pub fn (self &Vec[T]) last() ?&T {
+	if self.len == 0 {
+		return none
+	}
+	unsafe {
+		return &self.data[self.len - 1]
+	}
+}
+
+pub fn (mut self Vec[T]) set(index u64, val T) {
+	if index >= self.len {
+		log.panic(c'Vec out of bounds')
+	}
+	unsafe {
+		self.data[index] = val
+	}
 }
 
 pub fn (mut self Vec[T]) push(val T) {
@@ -24,28 +60,14 @@ pub fn (mut self Vec[T]) pop() ?T {
 		return none
 	}
 	self.len--
-	return unsafe { self.data[self.len] }
-}
-
-pub fn (self &Vec[T]) get(index u64) ?&T {
-	if index >= self.len {
-		return none
-	}
-	return unsafe { &self.data[index] }
-}
-
-pub fn (mut self Vec[T]) set(index u64, val T) {
-	if index >= self.len {
-		log.panic(c'Vec out of bounds')
-	}
 	unsafe {
-		self.data[index] = val
+		return self.data[self.len]
 	}
 }
 
 pub fn (mut self Vec[T]) free() {
-	if self.cap > 0 && self.data != unsafe { nil } {
-		unsafe { C.free(self.data) }
+	if self.cap > 0 {
+		C.free(self.data)
 		self.data = unsafe { nil }
 		self.len = 0
 		self.cap = 0
@@ -53,18 +75,42 @@ pub fn (mut self Vec[T]) free() {
 }
 
 fn (mut self Vec[T]) grow() {
-	new_cap := if self.cap == 0 { u64(8) } else { self.cap * 2 }
+	new_cap := if self.cap == 0 {
+		u64(8)
+	} else {
+		self.cap * 2
+	}
+
 	new_size := usize(new_cap * sizeof(T))
+	new_ptr := C.realloc(self.data, new_size)
+
+	if new_ptr == unsafe { nil } {
+		log.panic(c'Vec: out of memory')
+	}
+
+	self.cap = new_cap
+	self.data = new_ptr
+}
+
+pub struct VecIterator[T] {
+	vec &Vec[T]
+mut:
+	index u64
+}
+
+pub fn (self &Vec[T]) iter() VecIterator[T] {
+	return VecIterator[T]{
+		vec: unsafe { self }
+	}
+}
+
+pub fn (mut self VecIterator[T]) next() ?&T {
+	if self.index >= self.vec.len {
+		return none
+	}
+	defer { self.index++ }
 
 	unsafe {
-		new_ptr := &T(C.malloc(new_size))
-
-		if self.cap > 0 && self.data != 0 {
-			C.memcpy(new_ptr, self.data, usize(self.len * sizeof(T)))
-			C.free(self.data)
-		}
-
-		self.data = new_ptr
-		self.cap = new_cap
+		return &self.vec.data[self.index]
 	}
 }

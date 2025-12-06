@@ -1,14 +1,14 @@
 module usb
 
+import class
 import log
 import xhci
 
 pub fn init() {
 	log.info(c'Initializing USB subsystem...')
+	class.init()
 
-	for i in 0 .. pci_devices.len {
-		device := pci_devices.get(i) or { continue }
-
+	for device in pci_devices.iter() {
 		if device.device_type != .usb_controller {
 			continue
 		}

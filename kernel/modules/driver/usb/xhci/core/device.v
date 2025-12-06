@@ -1,13 +1,8 @@
 module core
 
-import common {
-	ConfigurationDescriptor,
-	DeviceDescriptor,
-	EndpointDescriptor,
-	SetupPacket,
-}
+import defs { EndpointDescriptor }
 import log
-import regs
+import utils { Vec }
 
 pub fn (mut self Xhci) address_device(port_id int, slot_id u8, speed_id u32) ? {
 	log.debug(c'Addressing device on slot %d...', slot_id)
@@ -65,85 +60,7 @@ pub fn (mut self Xhci) address_device(port_id int, slot_id u8, speed_id u32) ? {
 	}
 }
 
-pub fn (mut self Xhci) get_device_descriptor(slot_id u8) ? {
-	desc_virt, desc_phys := kernel_page_table.alloc_dma(1)
-	defer { kernel_page_table.dealloc_dma(desc_virt, 1) }
-
-	setup := SetupPacket{
-		request_type: common.req_dir_in
-		request:      common.req_get_descriptor
-		value:        (u16(common.desc_device) << 8) | 0
-		index:        0
-		length:       u16(sizeof(common.DeviceDescriptor))
-	}
-
-	self.usb_control_transfer(
-		slot_id:     slot_id
-		setup:       setup
-		buffer_phys: u64(desc_phys)
-	)?
-
-	desc := &DeviceDescriptor(desc_virt)
-	log.info(c'Vendor: %04x, Product: %04x', desc.id_vendor, desc.id_product)
-	log.info(c'USB Class: %d', desc.device_class)
-
-	if desc.device_class == 0 {
-		log.info(c'Class defined in Interface Descriptors')
-	} else if desc.device_class == common.class_hub  {
-		log.info(c'HUB Device')
-	} else {
-		log.info(c'Unknown Class: %d', desc.device_class)
-	}
-}
-
-pub fn (mut self Xhci) activate_device(slot_id u8) ? {
-	log.debug(c'Setting up endpoints for slot %d...', slot_id)
-
-	header_virt, header_phys := kernel_page_table.alloc_dma(1)
-	defer { kernel_page_table.dealloc_dma(header_virt, 1) }
-
-	setup_header := SetupPacket{
-		request_type: common.req_dir_in
-		request:      common.req_get_descriptor
-		value:        (u16(common.desc_configuration) << 8) | 0
-		index:        0
-		length:       u16(sizeof(common.ConfigurationDescriptor))
-	}
-
-	self.usb_control_transfer(
-		slot_id:     slot_id
-		setup:       setup_header
-		buffer_phys: u64(header_phys)
-	)?
-
-	header := &ConfigurationDescriptor(header_virt)
-	total_len := header.total_length
-	config_val := header.configuration_value
-
-	pages_needed := (u64(total_len) + 4095) / 4096
-	config_virt, config_phys := kernel_page_table.alloc_dma(pages_needed)
-	defer { kernel_page_table.dealloc_dma(config_virt, pages_needed) }
-
-	setup_full := SetupPacket{
-		request_type: common.req_dir_in
-		request:      common.req_get_descriptor
-		value:        (u16(common.desc_configuration) << 8) | 0
-		index:        0
-		length:       total_len
-	}
-
-	self.usb_control_transfer(
-		slot_id:     slot_id
-		setup:       setup_full
-		buffer_phys: u64(config_phys)
-	)?
-
-	self.configure_endpoints(slot_id, &u8(config_virt), total_len)?
-	self.set_configuration(slot_id, config_val)?
-	log.success(c'Slot %d configured successfully', slot_id)
-}
-
-fn (mut self Xhci) configure_endpoints(slot_id u8, config_virt &u8, len u16) ? {
+pub fn (mut self Xhci) configure_endpoints(slot_id u8, endpoints &Vec[EndpointDescriptor]) ? {
 	in_ctx_virt, in_ctx_phys := kernel_page_table.alloc_dma(1)
 	defer { kernel_page_table.dealloc_dma(in_ctx_virt, 1) }
 
@@ -151,23 +68,13 @@ fn (mut self Xhci) configure_endpoints(slot_id u8, config_virt &u8, len u16) ? {
 	ctrl_ctx.add_flags = 1
 
 	mut max_dci := u32(0)
-	mut offset := u16(0)
 
-	for offset < len {
-		desc_len := unsafe { config_virt[offset] }
-		desc_type := unsafe { config_virt[offset + 1] }
+	for ep_desc in endpoints.iter() {
+		dci := self.setup_one_endpoint(slot_id, in_ctx_virt, ep_desc) or { 0 }
 
-		if offset + u16(desc_len) > len {
-			break
+		if dci > max_dci {
+			max_dci = dci
 		}
-
-		if desc_type == common.desc_endpoint {
-			ep_desc := &EndpointDescriptor(config_virt + offset)
-			dci := self.setup_one_endpoint(slot_id, in_ctx_virt, ep_desc) or { 0 }
-			max_dci = if dci > max_dci { dci } else { max_dci }
-		}
-
-		offset += u16(desc_len)
 	}
 
 	mut slot_ctx := SlotContext.from(in_ctx_virt, self.ctx_size)
@@ -188,7 +95,7 @@ fn (mut self Xhci) configure_endpoints(slot_id u8, config_virt &u8, len u16) ? {
 fn (mut self Xhci) setup_one_endpoint(slot_id u8, ctx_base u64, desc &EndpointDescriptor) ?u32 {
 	addr := desc.endpoint_address
 	ep_num := addr & 0x0f
-	is_in := (addr & common.req_dir_in) != 0
+	is_in := (addr & defs.req_dir_in) != 0
 
 	dci := if is_in { ep_num * 2 + 1 } else { ep_num * 2 }
 
@@ -219,74 +126,6 @@ fn (mut self Xhci) setup_one_endpoint(slot_id u8, ctx_base u64, desc &EndpointDe
 	ctrl_ctx.add_flags |= (1 << dci)
 
 	return dci
-}
-
-pub fn (mut self Xhci) set_configuration(slot_id u8, config_val u8) ? {
-	setup := SetupPacket{
-		request_type: common.req_dir_out
-		request:      common.req_set_configuration
-		value:        u16(config_val)
-		index:        0
-		length:       0
-	}
-
-	self.usb_control_transfer(
-		slot_id:     slot_id
-		setup:       setup
-		buffer_phys: 0
-	) or {
-		log.error(c'Failed to send set configuration request')
-		return none
-	}
-}
-
-@[params]
-pub struct ControlTransfer {
-pub:
-	slot_id     u8
-	setup       SetupPacket
-	buffer_phys u64
-}
-
-fn (mut self Xhci) usb_control_transfer(args ControlTransfer) ? {
-	is_in := (args.setup.request_type & common.req_dir_in) != 0
-
-	setup, slot_id := args.setup, args.slot_id
-	setup_ptr := unsafe { &u32(&args.setup) }
-	param_low := unsafe { setup_ptr[0] }
-	param_high := unsafe { setup_ptr[1] }
-
-	trt := match true {
-		setup.length == 0 { u32(0) }
-		is_in { 3 }
-		else { 2 }
-	}
-
-	mut slot := &self.slots[slot_id]
-	setup_trb := Trb.new_setup_stage(param_low, param_high, trt)
-	slot.rings[1].enqueue(setup_trb)
-
-	if setup.length > 0 {
-		data_trb := Trb.new_data_stage(args.buffer_phys, setup.length, is_in)
-		slot.rings[1].enqueue(data_trb)
-	}
-
-	status_dir_in := setup.length == 0 || !is_in
-	status_trb := Trb.new_status_stage(status_dir_in)
-	slot.rings[1].enqueue(status_trb)
-
-	self.doorbell.ring(slot_id, 1)
-
-	evt := self.wait_event(trb_transfer_event, slot_id) or {
-		log.error(c'Control transfer timeout (slot %d)', slot_id)
-		return none
-	}
-
-	code := evt.completion_code()
-	if code != 1 && code != 13 {
-		log.error(c'Control transfer failed. Code: %d', code)
-		return none
-	}
 }
 
 fn (mut self Xhci) cleanup_slot_on_failure(slot_id u8) {

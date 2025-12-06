@@ -18,9 +18,9 @@ fn (self &Xhci) wait_ready() bool {
 	return false
 }
 
-fn (self &Xhci) wait_halted(expect_halted bool) bool {
+fn (self &Xhci) wait_halted() bool {
 	for _ in 0 .. 1_000_000 {
-		if self.op.is_halted() == expect_halted {
+		if self.op.is_halted() {
 			return true
 		}
 		cpu.spin_hint()
@@ -45,7 +45,7 @@ pub fn (self &Xhci) reset_controller() bool {
 		log.debug(c'Controller is running, stopping')
 		self.op.stop()
 
-		if !self.wait_halted(true) {
+		if !self.wait_halted() {
 			log.error(c'Failed to stop controller')
 			return false
 		}

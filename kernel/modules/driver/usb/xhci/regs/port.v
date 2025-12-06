@@ -55,11 +55,10 @@ pub fn (p Port) speed_id() u32 {
 }
 
 pub fn (self Port) reset() bool {
-	status := self.read_portsc()
-	if (status & port_ccs) == 0 {
+	if !self.is_connected() {
 		return false
 	}
-	self.update_portsc(|val| val | port_pr | port_pp)
+	self.update_portsc(port_pr | port_pp)
 	return true
 }
 
@@ -67,14 +66,7 @@ fn (self Port) read_portsc() u32 {
 	return cpu.mmio_in[u32](&u32(self.base_addr))
 }
 
-fn (self Port) update_portsc(modify fn (u32) u32) {
-	val := self.read_portsc()
-	mut safe_val := val & ~u32(port_rw1c_mask)
-	new_val := modify(safe_val)
-	cpu.mmio_out[u32](&u32(self.base_addr), new_val)
-}
-
-pub fn (self Port) clear_change_bit(mask u32) {
+pub fn (self Port) update_portsc(mask u32) {
 	val := self.read_portsc()
 	write_val := (val & ~u32(port_rw1c_mask)) | mask
 	cpu.mmio_out[u32](&u32(self.base_addr), write_val)

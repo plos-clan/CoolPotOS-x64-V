@@ -7,7 +7,6 @@ $if amd64 {
 	import arch.loongarch64.cpu { mmio_in, mmio_out }
 }
 
-import log
 import mem
 import utils { Vec }
 

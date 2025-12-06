@@ -1,5 +1,6 @@
 module core
 
+import bus
 import log
 import regs
 
@@ -12,7 +13,7 @@ $if amd64 {
 fn (self &Xhci) wait_port_reset(port regs.Port) bool {
 	for _ in 0 .. 1_000_000 {
 		if port.has_reset_change() {
-			port.clear_change_bit(regs.port_prc)
+			port.update_portsc(regs.port_prc)
 			if port.is_enabled() {
 				return true
 			}
@@ -43,7 +44,7 @@ fn (mut self Xhci) handle_port(port regs.Port) {
 	}
 
 	if port.has_connect_change() {
-		port.clear_change_bit(regs.port_csc)
+		port.update_portsc(regs.port_csc)
 	}
 
 	if port.is_enabled() {
@@ -51,6 +52,10 @@ fn (mut self Xhci) handle_port(port regs.Port) {
 		return
 	}
 
+	self.attach_device(port)
+}
+
+fn (mut self Xhci) attach_device(port regs.Port) {
 	log.debug(c'Port %d connected, resetting...', port.id)
 
 	if !port.reset() || !self.wait_port_reset(port) {
@@ -68,7 +73,6 @@ fn (mut self Xhci) handle_port(port regs.Port) {
 	self.setup_slot_device(port, slot_id) or {
 		log.error(c'Device init failed for slot %d', slot_id)
 		self.cleanup_slot_on_failure(slot_id)
-		return
 	}
 }
 
@@ -77,6 +81,18 @@ fn (mut self Xhci) setup_slot_device(port regs.Port, slot_id u8) ? {
 	log.info(c'Port %d enabled (speed: %d)', port.id, speed_id)
 
 	self.address_device(port.id, slot_id, speed_id)?
-	self.get_device_descriptor(slot_id)?
-	self.activate_device(slot_id)?
+
+	mut dev := bus.UsbDevice.new(
+		host:    self
+		slot_id: slot_id
+		port_id: port.id
+		speed:   speed_id
+	)
+
+	log.info(c'Enumerating slot %d (port %d)', slot_id, port.id)
+
+	dev.enumerate() or {
+		log.error(c'Enumeration failed for slot %d', slot_id)
+		return none
+	}
 }

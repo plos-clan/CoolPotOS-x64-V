@@ -1,5 +1,6 @@
 module core
 
+import bus
 import regs
 import log
 
@@ -9,16 +10,16 @@ $if amd64 {
 	import arch.loongarch64.cpu
 }
 
-pub struct Xhci {
+pub struct Xhci implements bus.HostController {
 pub mut:
 	cap        regs.Capability
 	op         regs.Operational
+	ctx_size   int
 	dcbaa_virt &u64 = unsafe { nil }
 	cmd_ring   CommandRing
 	event_ring EventRing
 	doorbell   regs.Doorbell
 	slots      [256]Slot
-	ctx_size   int
 }
 
 pub fn Xhci.new(base_addr usize) &Xhci {
@@ -112,7 +113,7 @@ fn (mut self Xhci) handle_unexpected_event(evt Trb) {
 			log.debug(c'Hotplug port %d during wait', port_id)
 		}
 		trb_transfer_event {
-			log.warn(c'Unhandled transfer for slot %d', evt.slot_id())
+			self.complete_transfer(evt.slot_id(), evt.completion_code())
 		}
 		else {
 			log.debug(c'Ignoring event type: %d', evt.get_type())

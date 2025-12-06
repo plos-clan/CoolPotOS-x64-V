@@ -1,4 +1,4 @@
-module common
+module defs
 
 pub const desc_device = 1
 pub const desc_configuration = 2
@@ -44,3 +44,18 @@ pub const class_diagnostic = 0xdc
 pub const class_wireless = 0xe0
 pub const class_misc = 0xef
 pub const class_vendor_spec = 0xff
+
+pub const ep_type_control = 0
+pub const ep_type_iso = 1
+pub const ep_type_bulk = 2
+pub const ep_type_int = 3
+
+pub const req_get_report = 0x01
+pub const req_get_idle = 0x02
+pub const req_get_protocol = 0x03
+pub const req_set_report = 0x09
+pub const req_set_idle = 0x0a
+pub const req_set_protocol = 0x0b
+
+pub const proto_boot = 0
+pub const proto_report = 1
