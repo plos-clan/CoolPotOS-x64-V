@@ -42,12 +42,10 @@ pub fn (mut dev UsbDevice) submit_transfer(args GeneralTransferArgs) ? {
 	dev.host.submit_transfer(final_args)?
 }
 
-pub fn (mut dev UsbDevice) dispatch_completion(ep_addr u8, status int, len u32) {
-	if iface_idx := dev.ep_map.get(ep_addr) {
+pub fn (mut dev UsbDevice) dispatch_completion(event CompletionEvent) {
+	if iface_idx := dev.ep_map.get(event.ep_addr) {
 		iface := dev.interfaces.get(iface_idx)
-
-		if mut driver := iface.driver {
-			driver.handle_completion(ep_addr, status, len)
-		}
+		mut driver := iface.driver or { return }
+		driver.handle_completion(event)
 	}
 }
