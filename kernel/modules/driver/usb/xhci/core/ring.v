@@ -21,7 +21,7 @@ pub fn CommandRing.new() CommandRing {
 	trb_count := u32(0x1000 / sizeof(Trb))
 
 	return CommandRing{
-		base:        unsafe { &Trb(ring_virt) }
+		base:        &Trb(ring_virt)
 		phys_addr:   ring_phys
 		capacity:    trb_count
 		enqueue_idx: 0
@@ -89,7 +89,7 @@ pub fn EventRing.new(erdp_reg &u32) EventRing {
 	trb_count := u32(0x1000 / sizeof(Trb))
 
 	return EventRing{
-		base:        unsafe { &Trb(ring_virt) }
+		base:        &Trb(ring_virt)
 		phys_addr:   ring_phys
 		capacity:    trb_count
 		dequeue_idx: 0
@@ -149,7 +149,7 @@ pub fn TransferRing.new() TransferRing {
 	trb_count := u32(0x1000 / sizeof(Trb))
 
 	return TransferRing{
-		base:        unsafe { &Trb(ring_virt) }
+		base:        &Trb(ring_virt)
 		phys_addr:   ring_phys
 		capacity:    trb_count
 		enqueue_idx: 0

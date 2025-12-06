@@ -62,6 +62,7 @@ pub fn main() {
 	usb.init()
 
 	for {
+		xhci_temp.poll()
 		cpu.hcf()
 	}
 }

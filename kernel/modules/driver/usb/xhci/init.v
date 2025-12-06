@@ -1,9 +1,12 @@
+@[has_globals]
 module xhci
 
 import core
 import mem
 import log
 import pcie
+
+__global xhci_temp &core.Xhci
 
 fn init_controller(base_addr usize) {
 	mut xhci := core.Xhci.new(base_addr)
@@ -26,6 +29,7 @@ fn init_controller(base_addr usize) {
 
 	xhci.test_command_ring() or { return }
 	xhci.check_ports()
+	xhci_temp = xhci
 }
 
 pub fn init(device &pcie.PciDevice) {

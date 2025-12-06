@@ -10,6 +10,7 @@ __global (
 pub interface UsbDriver {
 mut:
 	disconnect()
+	handle_completion(ep_addr u8, status int, len u32)
 }
 
 pub type ProbeFn = fn (iface &UsbInterface) ?UsbDriver

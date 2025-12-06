@@ -39,6 +39,18 @@ pub fn Xhci.new(base_addr usize) &Xhci {
 	return xhci
 }
 
+pub fn (mut self Xhci) poll() {
+	mut need_update := false
+	for _ in 0 .. 16 {
+		evt := self.event_ring.pop() or { break }
+		self.handle_one_event(evt)
+		need_update = true
+	}
+	if need_update {
+		self.event_ring.update_erdp()
+	}
+}
+
 pub fn (mut self Xhci) test_command_ring() ? {
 	log.info(c'Testing command ring with no op')
 
@@ -101,22 +113,31 @@ fn (mut self Xhci) wait_event(@type u32, slot ?u8) ?Trb {
 			return evt
 		}
 
-		self.handle_unexpected_event(evt)
+		self.handle_one_event(evt)
 	}
 	return none
 }
 
-fn (mut self Xhci) handle_unexpected_event(evt Trb) {
+fn (mut self Xhci) handle_one_event(evt Trb) {
 	match evt.get_type() {
+		trb_transfer_event {
+			slot_id := evt.slot_id()
+			code := evt.completion_code()
+			dci := evt.endpoint_id()
+			len := evt.transfer_length()
+			self.complete_transfer(slot_id, dci, code, len)
+		}
 		trb_port_status_change {
 			port_id := evt.param_low >> 24
-			log.debug(c'Hotplug port %d during wait', port_id)
+			log.info(c'Port %d status change', port_id)
+			mut port := regs.Port.new(self.op.base_addr, int(port_id - 1))
+			self.handle_port(port)
 		}
-		trb_transfer_event {
-			self.complete_transfer(evt.slot_id(), evt.completion_code())
+		trb_cmd_completion {
+			log.debug(c'Stale command completion ignored')
 		}
 		else {
-			log.debug(c'Ignoring event type: %d', evt.get_type())
+			log.debug(c'Ignored event type %d', evt.get_type())
 		}
 	}
 }

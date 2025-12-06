@@ -63,6 +63,18 @@ pub fn (mut self Xhci) submit_control(args bus.ControlTransferArgs) ? {
 	}
 }
 
-fn (mut self Xhci) complete_transfer(slot_id u8, code u32) {
-	log.debug(c'Data transfer finished on slot %d', slot_id)
+fn (mut self Xhci) complete_transfer(slot_id u8, dci u32, code u32, len u32) {
+	mut slot := &self.slots[slot_id]
+
+	if slot.usb_device == unsafe { nil } {
+		return
+	}
+
+	ep_num := u8(dci / 2)
+	is_in := (dci % 2) != 0
+	ep_addr := if is_in { ep_num | 0x80 } else { ep_num }
+
+	status := if code == 1 { 0 } else { int(code) }
+
+	slot.usb_device.dispatch_completion(ep_addr, status, len)
 }

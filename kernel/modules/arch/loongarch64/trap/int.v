@@ -9,7 +9,7 @@ const csr_estat_is_ti = 1 << 11
 pub fn init() {
 	cpu.write_eentry(u64(trap_wrapper))
 
-	cpu.write_tcfg(10000000 | 0b11)
+	cpu.write_tcfg(1000000 | 0b11)
 	cpu.write_crmd(cpu.read_crmd() | 0b100)
 }
 

@@ -1,4 +1,3 @@
-@[has_globals]
 module bus
 
 import defs {
@@ -31,19 +30,24 @@ mut:
 	submit_transfer(args GeneralTransferArgs) ?
 }
 
-@[markused]
-__global controllers Vec[HostController]
-
-@[inline]
 pub fn (mut dev UsbDevice) submit_control(args ControlTransferArgs) ? {
 	mut final_args := args
 	final_args.slot_id = dev.slot_id
 	dev.host.submit_control(final_args)?
 }
 
-@[inline]
 pub fn (mut dev UsbDevice) submit_transfer(args GeneralTransferArgs) ? {
 	mut final_args := args
 	final_args.slot_id = dev.slot_id
 	dev.host.submit_transfer(final_args)?
+}
+
+pub fn (mut dev UsbDevice) dispatch_completion(ep_addr u8, status int, len u32) {
+	if iface_idx := dev.ep_map.get(ep_addr) {
+		iface := dev.interfaces.get(iface_idx)
+
+		if mut driver := iface.driver {
+			driver.handle_completion(ep_addr, status, len)
+		}
+	}
 }

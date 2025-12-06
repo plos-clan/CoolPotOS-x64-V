@@ -103,9 +103,12 @@ fn (mut dev UsbDevice) parse_config_tree(config_raw &u8, total_len u16) {
 				dev.interfaces.push(UsbInterface{ desc: *iface_desc, device: &dev })
 			}
 			defs.desc_endpoint {
-				mut iface := dev.interfaces.last() or { continue }
-				ep_desc := &EndpointDescriptor(config_raw + offset)
-				iface.endpoints.push(UsbEndpoint{*ep_desc})
+				if mut iface := dev.interfaces.last() {
+					ep_desc := &EndpointDescriptor(config_raw + offset)
+					iface.endpoints.push(UsbEndpoint{*ep_desc})
+					iface_idx := u8(dev.interfaces.len - 1)
+					dev.ep_map.set(ep_desc.endpoint_address, iface_idx)
+				}
 			}
 			else {}
 		}

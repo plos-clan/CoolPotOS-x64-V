@@ -35,12 +35,20 @@ pub fn (t Trb) get_type() u32 {
 	return (t.control >> 10) & 0x3f
 }
 
+pub fn (t Trb) slot_id() u8 {
+	return u8((t.control >> 24) & 0xff)
+}
+
+pub fn (t Trb) endpoint_id() u32 {
+	return (t.control >> 16) & 0x1f
+}
+
 pub fn (t Trb) completion_code() u32 {
 	return (t.status >> 24) & 0xff
 }
 
-pub fn (t Trb) slot_id() u8 {
-	return u8((t.control >> 24) & 0xff)
+pub fn (t Trb) transfer_length() u32 {
+	return t.status & 0xffffff
 }
 
 pub fn Trb.new_no_op_cmd() Trb {

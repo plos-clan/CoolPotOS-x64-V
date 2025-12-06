@@ -89,10 +89,12 @@ fn (mut self Xhci) setup_slot_device(port regs.Port, slot_id u8) ? {
 		speed:   speed_id
 	)
 
-	log.info(c'Enumerating slot %d (port %d)', slot_id, port.id)
+	self.slots[slot_id].usb_device = dev
 
 	dev.enumerate() or {
 		log.error(c'Enumeration failed for slot %d', slot_id)
+		dev.free()
+		self.slots[slot_id].usb_device = unsafe { nil }
 		return none
 	}
 }

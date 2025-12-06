@@ -9,9 +9,9 @@ mut:
 	cap  u64
 }
 
-pub fn (self &Vec[T]) get(index u64) ?&T {
+pub fn (self &Vec[T]) get(index u64) &T {
 	if index >= self.len {
-		return none
+		log.panic(c'Vec out of bounds')
 	}
 	unsafe {
 		return &self.data[index]
