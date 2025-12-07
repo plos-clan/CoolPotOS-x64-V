@@ -57,13 +57,17 @@ pub mut:
 	info2           u32
 	tr_dequeue_low  u32
 	tr_dequeue_high u32
-	avg_tr_len      u32
+	tx_info         u32
 	reserved        [3]u32
 }
 
 pub fn EndpointContext.from(base usize, dci int, ctx_size int) &EndpointContext {
 	offset := (dci + 1) * ctx_size
 	return &EndpointContext(&u8(base) + offset)
+}
+
+pub fn (mut e EndpointContext) set_mult(val u32) {
+	e.info1 |= (val & 0x3) << 8
 }
 
 pub fn (mut e EndpointContext) set_interval(val u32) {
@@ -82,16 +86,16 @@ pub fn (mut e EndpointContext) set_error_count(count u32) {
 	e.info2 |= (count & 0x3) << 1
 }
 
-pub fn (mut e EndpointContext) set_max_burst_size(size u32) {
+pub fn (mut e EndpointContext) set_max_burst(size u32) {
 	e.info2 |= (size & 0xff) << 8
 }
 
 pub fn (mut e EndpointContext) set_average_trb_len(len u32) {
-	e.avg_tr_len |= (len & 0xffff)
+	e.tx_info |= (len & 0xffff)
 }
 
 pub fn (mut e EndpointContext) set_max_esit_payload(size u32) {
-	e.avg_tr_len |= (size & 0xffff) << 16
+	e.tx_info |= (size & 0xffff) << 16
 }
 
 pub fn (mut e EndpointContext) set_dequeue_ptr(ptr u64) {

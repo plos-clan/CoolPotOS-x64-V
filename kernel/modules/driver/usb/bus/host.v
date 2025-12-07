@@ -1,9 +1,6 @@
 module bus
 
-import defs {
-	EndpointDescriptor,
-	SetupPacket,
-}
+import defs { SetupPacket }
 import utils { Vec }
 
 @[params]
@@ -25,7 +22,7 @@ pub mut:
 
 pub interface HostController {
 mut:
-	configure_endpoints(slot_id u8, endpoints &Vec[EndpointDescriptor]) ?
+	configure_endpoints(slot_id u8, endpoints &Vec[UsbEndpoint]) ?
 	submit_control(args ControlTransferArgs) ?
 	submit_transfer(args GeneralTransferArgs) ?
 }

@@ -1,6 +1,7 @@
 module core
 
-import defs { EndpointDescriptor }
+import bus { UsbEndpoint }
+import defs
 import log
 import utils { Vec }
 
@@ -35,15 +36,15 @@ pub fn (mut self Xhci) address_device(port_id int, slot_id u8, speed_id u32) ? {
 	slot_ctx.set_speed(speed_id)
 
 	mps := match speed_id {
-		4 { u32(512) }
-		1 { u32(8) }
-		else { u32(64) }
+		defs.speed_super { u32(512) }
+		defs.speed_low { 8 }
+		else { 64 }
 	}
 
 	mut ep0_ctx := EndpointContext.from(in_ctx_virt, 1, self.ctx_size)
-	ep0_ctx.set_ep_type(4)
+	ep0_ctx.set_ep_type(defs.ep_type_control + 4)
 	ep0_ctx.set_max_packet_size(mps)
-	ep0_ctx.set_max_burst_size(0)
+	ep0_ctx.set_max_burst(0)
 	ep0_ctx.set_error_count(3)
 	ep0_ctx.set_average_trb_len(8)
 	ep0_ctx.set_dequeue_ptr(ep0_ring.phys_addr | 1)
@@ -60,7 +61,7 @@ pub fn (mut self Xhci) address_device(port_id int, slot_id u8, speed_id u32) ? {
 	}
 }
 
-pub fn (mut self Xhci) configure_endpoints(slot_id u8, endpoints &Vec[EndpointDescriptor]) ? {
+pub fn (mut self Xhci) configure_endpoints(slot_id u8, endpoints &Vec[UsbEndpoint]) ? {
 	in_ctx_virt, in_ctx_phys := kernel_page_table.alloc_dma(1)
 	defer { kernel_page_table.dealloc_dma(in_ctx_virt, 1) }
 
@@ -69,8 +70,8 @@ pub fn (mut self Xhci) configure_endpoints(slot_id u8, endpoints &Vec[EndpointDe
 
 	mut max_dci := u32(0)
 
-	for ep_desc in endpoints.iter() {
-		dci := self.setup_one_endpoint(slot_id, in_ctx_virt, ep_desc) or { 0 }
+	for ep in endpoints.iter() {
+		dci := self.setup_one_endpoint(slot_id, in_ctx_virt, ep) or { 0 }
 
 		if dci > max_dci {
 			max_dci = dci
@@ -92,13 +93,12 @@ pub fn (mut self Xhci) configure_endpoints(slot_id u8, endpoints &Vec[EndpointDe
 	}
 }
 
-fn (mut self Xhci) setup_one_endpoint(slot_id u8, ctx_base u64, desc &EndpointDescriptor) ?u32 {
-	addr := desc.endpoint_address
+fn (mut self Xhci) setup_one_endpoint(slot_id u8, ctx_base u64, ep &UsbEndpoint) ?u32 {
+	addr := ep.desc.endpoint_address
 	ep_num := addr & 0x0f
 	is_in := (addr & defs.req_dir_in) != 0
 
 	dci := if is_in { ep_num * 2 + 1 } else { ep_num * 2 }
-
 	if dci < 2 || dci > 31 {
 		return none
 	}
@@ -106,21 +106,77 @@ fn (mut self Xhci) setup_one_endpoint(slot_id u8, ctx_base u64, desc &EndpointDe
 	mut ring := TransferRing.new()
 	self.slots[slot_id].rings[dci] = ring
 
-	attr := desc.attributes & 0x3
+	attr := ep.desc.attributes & 0x3
 	ep_type := if is_in { attr + 4 } else { attr }
+
+	raw_mps := u32(ep.desc.max_packet_size)
+	mps := raw_mps & 0x7ff
+	speed := self.slots[slot_id].speed
+
+	error_count := match attr {
+		defs.ep_type_iso { u32(0) }
+		else { 3 }
+	}
+
+	avg_trb_len := match attr {
+		defs.ep_type_control { 8 }
+		defs.ep_type_int { 1024 }
+		defs.ep_type_iso { mps }
+		else { 3072 }
+	}
+
+	is_iso_int := attr == defs.ep_type_int || attr == defs.ep_type_iso
+	hs_burst := if is_iso_int { (raw_mps >> 11) & 0x03 } else { 0 }
+	ss_burst := if ss := ep.ss_desc { u32(ss.max_burst) } else { 0 }
+
+	max_burst := match speed {
+		defs.speed_high { hs_burst }
+		defs.speed_super { ss_burst }
+		else { 0 }
+	}
+
+	raw_ival := u32(ep.desc.interval)
+	ls_fs_interval := if raw_ival > 0 { utils.ilog2(raw_ival) + 3 } else { 0 }
+	hs_ss_interval := if raw_ival > 0 { raw_ival - 1 } else { 0 }
+
+	mut interval := u32(0)
+	if is_iso_int {
+		interval = match speed {
+			defs.speed_low, defs.speed_full { ls_fs_interval }
+			else { hs_ss_interval }
+		}
+	}
+
+	is_ss_iso := speed == defs.speed_super && attr == defs.ep_type_iso
+	ss_iso_mult := if ss := ep.ss_desc { u32(ss.attributes & 0x3) } else { 0 }
+	mult := if is_ss_iso { ss_iso_mult } else { 0 }
+
+	mut max_esit_payload := u32(0)
+	if is_iso_int {
+		max_esit_payload = match speed {
+			defs.speed_super {
+				if ss := ep.ss_desc {
+					u32(ss.bytes_per_interval)
+				} else {
+					mps * (max_burst + 1)
+				}
+			}
+			else {
+				mps * (max_burst + 1)
+			}
+		}
+	}
 
 	mut ep_ctx := EndpointContext.from(ctx_base, dci, self.ctx_size)
 	ep_ctx.set_ep_type(ep_type)
-	ep_ctx.set_interval(u32(desc.interval))
-	ep_ctx.set_max_burst_size(0)
-	ep_ctx.set_error_count(3)
+	ep_ctx.set_interval(interval)
+	ep_ctx.set_mult(mult)
+	ep_ctx.set_max_burst(max_burst)
+	ep_ctx.set_error_count(error_count)
 	ep_ctx.set_dequeue_ptr(ring.phys_addr | 1)
-
-	mps := u32(desc.max_packet_size) & 0x7ff
 	ep_ctx.set_max_packet_size(mps)
-
-	avg_len := if attr == 3 { u32(1024) } else { u32(3072) }
-	ep_ctx.set_average_trb_len(avg_len)
+	ep_ctx.set_average_trb_len(avg_trb_len)
+	ep_ctx.set_max_esit_payload(max_esit_payload)
 
 	mut ctrl_ctx := InputControlContext.from(ctx_base)
 	ctrl_ctx.add_flags |= (1 << dci)
@@ -151,7 +207,6 @@ fn (mut self Xhci) cleanup_slot_on_failure(slot_id u8) {
 	for i in 1 .. 32 {
 		if self.slots[slot_id].rings[i].phys_addr != 0 {
 			self.slots[slot_id].rings[i].free()
-			self.slots[slot_id].rings[i] = TransferRing{}
 		}
 	}
 

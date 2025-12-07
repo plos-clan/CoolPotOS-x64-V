@@ -6,6 +6,7 @@ import defs {
 	EndpointDescriptor,
 	InterfaceDescriptor,
 	SetupPacket,
+	SsEndpointCompanionDescriptor,
 }
 import log
 import utils { Vec }
@@ -25,7 +26,7 @@ pub fn (mut dev UsbDevice) enumerate() ? {
 	)?
 
 	dev.desc = *&DeviceDescriptor(desc_virt)
-	log.info(c'New USB Device: VID=%04x', dev.desc.id_vendor)
+	log.info(c'USB Device: %04x:%04x', dev.desc.id_vendor, dev.desc.id_product)
 
 	header_virt, header_phys := kernel_page_table.alloc_dma(1)
 	defer { kernel_page_table.dealloc_dma(header_virt, 1) }
@@ -61,12 +62,12 @@ pub fn (mut dev UsbDevice) enumerate() ? {
 	log.debug(c'Parsing config tree (len: %d)', total_len)
 	dev.parse_config_tree(&u8(config_virt), total_len)
 
-	mut endpoints := Vec[EndpointDescriptor]{}
+	mut endpoints := Vec[UsbEndpoint]{}
 	defer { endpoints.free() }
 
 	for iface in dev.interfaces.iter() {
 		for endpoint in iface.endpoints.iter() {
-			endpoints.push(endpoint.desc)
+			endpoints.push(*endpoint)
 		}
 	}
 
@@ -105,9 +106,17 @@ fn (mut dev UsbDevice) parse_config_tree(config_raw &u8, total_len u16) {
 			defs.desc_endpoint {
 				if mut iface := dev.interfaces.last() {
 					ep_desc := &EndpointDescriptor(config_raw + offset)
-					iface.endpoints.push(UsbEndpoint{*ep_desc})
+					iface.endpoints.push(UsbEndpoint{ desc: *ep_desc })
 					iface_idx := u8(dev.interfaces.len - 1)
 					dev.ep_map.set(ep_desc.endpoint_address, iface_idx)
+				}
+			}
+			defs.desc_ss_ep_companion {
+				if mut iface := dev.interfaces.last() {
+					if mut ep := iface.endpoints.last() {
+						ss_desc := &SsEndpointCompanionDescriptor(config_raw + offset)
+						ep.ss_desc = *ss_desc
+					}
 				}
 			}
 			else {}

@@ -15,6 +15,7 @@ QEMUFLAGS = -no-reboot -serial stdio
 QEMUFLAGS += -drive if=pflash,format=raw,file=assets/firmware/$(ARCH).fd
 QEMUFLAGS += -device nvme,drive=disk,serial=deadbeef
 QEMUFLAGS += -device qemu-xhci -device usb-kbd -device usb-mouse
+QEMUFLAGS += -netdev user,id=net0 -device usb-net,netdev=net0
 QEMUFLAGS += -drive if=none,id=disk,format=raw,file=$(OUTPUT_IMG)
 
 ifeq ($(ARCH), x86_64)

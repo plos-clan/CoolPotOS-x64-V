@@ -9,7 +9,7 @@ pub fn (mut self Xhci) submit_transfer(args bus.GeneralTransferArgs) ? {
 	is_in := (args.ep_addr & defs.req_dir_in) != 0
 
 	dci := if is_in { ep_num * 2 + 1 } else { ep_num * 2 }
-	if dci < 2 {
+	if dci < 2 || dci > 31 {
 		return none
 	}
 
@@ -72,7 +72,6 @@ fn (mut self Xhci) complete_transfer(slot_id u8, dci u32, code u32, len u32) {
 
 	ep_num := u8(dci / 2)
 	is_in := (dci % 2) != 0
-	ep_addr := if is_in { ep_num | defs.req_dir_in } else { ep_num }
 
 	status := match code {
 		1 { bus.TransferStatus.completed }
@@ -84,8 +83,8 @@ fn (mut self Xhci) complete_transfer(slot_id u8, dci u32, code u32, len u32) {
 	}
 
 	slot.usb_device.dispatch_completion(
-		ep_addr:       ep_addr
 		status:        status
 		actual_length: len
+		ep_addr:       if is_in { ep_num | defs.req_dir_in } else { ep_num }
 	)
 }

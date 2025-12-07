@@ -51,3 +51,8 @@ void builtin___option_ok(void* data, _option* option, int size) {
     option->state = 0;
     memcpy(((u8*)(&option->err)) + sizeof(IError), data, size);
 }
+
+void builtin___option_none(void* data, _option* option, int size) {
+	option->state = 2;
+	memcpy(((u8*)(&option->err)) + sizeof(IError), data, size);
+}

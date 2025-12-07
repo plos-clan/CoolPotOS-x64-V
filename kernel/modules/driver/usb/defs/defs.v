@@ -5,6 +5,7 @@ pub const desc_configuration = 2
 pub const desc_string = 3
 pub const desc_interface = 4
 pub const desc_endpoint = 5
+pub const desc_ss_ep_companion = 48
 
 pub const desc_hid = 0x21
 pub const desc_report = 0x22
@@ -59,3 +60,9 @@ pub const req_set_protocol = 0x0b
 
 pub const proto_boot = 0
 pub const proto_report = 1
+
+pub const speed_full = 1
+pub const speed_low = 2
+pub const speed_high = 3
+pub const speed_super = 4
+pub const speed_super_plus = 5

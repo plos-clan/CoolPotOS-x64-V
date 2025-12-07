@@ -3,12 +3,14 @@ module bus
 import defs {
 	EndpointDescriptor,
 	InterfaceDescriptor,
+	SsEndpointCompanionDescriptor,
 }
 import utils { Vec }
 
 pub struct UsbEndpoint {
 pub mut:
-	desc EndpointDescriptor
+	desc    EndpointDescriptor
+	ss_desc ?SsEndpointCompanionDescriptor
 }
 
 pub struct UsbInterface {

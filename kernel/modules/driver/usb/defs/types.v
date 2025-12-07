@@ -66,3 +66,13 @@ pub:
 	max_packet_size  u16
 	interval         u8
 }
+
+@[packed]
+pub struct SsEndpointCompanionDescriptor {
+pub:
+	length             u8
+	descriptor_type    u8
+	max_burst          u8
+	attributes         u8
+	bytes_per_interval u16
+}
