@@ -13,7 +13,6 @@ pub fn init() {
 	cpu.write_crmd(cpu.read_crmd() | 0b100)
 }
 
-@[export: 'trap_handler']
 fn trap_handler() {
 	estat := cpu.read_estat()
 	ecode := (estat >> 16) & 0x3f
@@ -29,7 +28,7 @@ fn trap_handler() {
 		era := cpu.read_era()
 		badv := cpu.read_badv()
 
-		log.error(c'Unhandled Exception! Ecode: %d', ecode)
+		log.error(c'Unhandled exception! Ecode: %d', ecode)
 		log.error(c'ERA (PC): %#lx BADV: %#lx', era, badv)
 
 		for {

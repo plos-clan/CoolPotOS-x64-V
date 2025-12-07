@@ -4,7 +4,7 @@ pub fn load[T](addr &T) T {
 	mut ret := unsafe { T(0) }
 	mut zero := unsafe { T(0) }
 	unsafe {
-		if sizeof(T) == 8 {
+		$if sizeof(T) == 8 {
 			asm volatile loongarch64 {
 				amadd_db.d ret, zero, addr
 				; =&r (ret)
@@ -12,7 +12,7 @@ pub fn load[T](addr &T) T {
 				  r (addr)
 				; memory
 			}
-		} else {
+		} $else {
 			asm volatile loongarch64 {
 				amadd_db.w ret, zero, addr
 				; =&r (ret)
@@ -28,7 +28,7 @@ pub fn load[T](addr &T) T {
 pub fn store[T](mut addr T, value T) {
 	mut tmp := unsafe { T(0) }
 	unsafe {
-		if sizeof(T) == 8 {
+		$if sizeof(T) == 8 {
 			asm volatile loongarch64 {
 				amswap_db.d tmp, value, addr
 				; =&r (tmp)
@@ -36,7 +36,7 @@ pub fn store[T](mut addr T, value T) {
 				  r (addr)
 				; memory
 			}
-		} else {
+		} $else {
 			asm volatile loongarch64 {
 				amswap_db.w tmp, value, addr
 				; =&r (tmp)
@@ -51,7 +51,7 @@ pub fn store[T](mut addr T, value T) {
 pub fn cas[T](mut addr T, _exp T, upd T) bool {
 	mut prev := _exp
 	unsafe {
-		if sizeof(T) == 8 {
+		$if sizeof(T) == 8 {
 			asm volatile loongarch64 {
 				amcas_db.d prev, upd, addr
 				; +r (prev)
@@ -59,7 +59,7 @@ pub fn cas[T](mut addr T, _exp T, upd T) bool {
 				  r (addr)
 				; memory
 			}
-		} else {
+		} $else {
 			asm volatile loongarch64 {
 				amcas_db.w prev, upd, addr
 				; +r (prev)

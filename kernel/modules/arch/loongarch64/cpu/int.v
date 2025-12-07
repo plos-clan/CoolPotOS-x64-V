@@ -7,7 +7,7 @@ pub fn hcf() {
 }
 
 pub fn spin_hint() {
-	asm volatile amd64 {
+	asm volatile loongarch64 {
 		dbar 0
 	}
 }

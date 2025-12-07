@@ -34,7 +34,7 @@ fn trap_wrapper() {
 		st.d r29, r3, 216
 		st.d r30, r3, 224
 		st.d r31, r3, 232
-		bl trap_handler
+		bl '%0'
 		ld.d r1, r3, 0
 		ld.d r2, r3, 8
 		ld.d r4, r3, 16
@@ -67,5 +67,7 @@ fn trap_wrapper() {
 		ld.d r31, r3, 232
 		addi.d r3, r3, 240
 		ertn
+		; ; i (trap_handler)
+		; r1
 	}
 }
