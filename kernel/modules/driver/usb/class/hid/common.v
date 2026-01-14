@@ -36,7 +36,7 @@ pub fn HidDevice.new(iface &UsbInterface, ep_addr u8) ?HidDevice {
 		report_desc_len:  desc_len
 	}
 
-	dev.get_report_descriptor() or {
+	dev.fetch_report_descriptor() or {
 		kernel_page_table.dealloc_dma(desc_virt, desc_pages)
 		return none
 	}
@@ -117,7 +117,7 @@ fn (mut self HidDevice) set_idle(duration u16) {
 	) or { log.warn(c'HID: Set idle failed (ignored)') }
 }
 
-fn (mut self HidDevice) get_report_descriptor() ? {
+fn (mut self HidDevice) fetch_report_descriptor() ? {
 	self.iface.device.submit_control(
 		setup:       defs.SetupPacket{
 			request_type: defs.req_dir_in | defs.req_rec_interface
