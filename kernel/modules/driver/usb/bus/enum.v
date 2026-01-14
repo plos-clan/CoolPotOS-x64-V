@@ -4,6 +4,7 @@ import defs {
 	ConfigurationDescriptor,
 	DeviceDescriptor,
 	EndpointDescriptor,
+	HidDescriptorHeader,
 	InterfaceDescriptor,
 	SetupPacket,
 	SsEndpointCompanionDescriptor,
@@ -91,37 +92,62 @@ fn (mut dev UsbDevice) parse_config_tree(config_raw &u8, total_len u16) {
 	mut offset := u16(0)
 
 	for offset < total_len {
-		desc_len := unsafe { config_raw[offset] }
-		desc_type := unsafe { config_raw[offset + 1] }
+		ptr := unsafe { config_raw + offset }
+		desc_len := unsafe { ptr[0] }
+		desc_type := unsafe { ptr[1] }
 
 		if offset + u16(desc_len) > total_len {
 			break
 		}
 
 		match desc_type {
-			defs.desc_interface {
-				iface_desc := &InterfaceDescriptor(config_raw + offset)
-				dev.interfaces.push(UsbInterface{ desc: *iface_desc, device: &dev })
-			}
-			defs.desc_endpoint {
-				if mut iface := dev.interfaces.last() {
-					ep_desc := &EndpointDescriptor(config_raw + offset)
-					iface.endpoints.push(UsbEndpoint{ desc: *ep_desc })
-					iface_idx := u8(dev.interfaces.len - 1)
-					dev.ep_map.set(ep_desc.endpoint_address, iface_idx)
-				}
-			}
-			defs.desc_ss_ep_companion {
-				if mut iface := dev.interfaces.last() {
-					if mut ep := iface.endpoints.last() {
-						ss_desc := &SsEndpointCompanionDescriptor(config_raw + offset)
-						ep.ss_desc = *ss_desc
-					}
-				}
-			}
+			defs.desc_interface { dev.parse_interface_descriptor(ptr) }
+			defs.desc_hid { dev.parse_hid_descriptor(ptr) }
+			defs.desc_endpoint { dev.parse_endpoint_descriptor(ptr) }
+			defs.desc_ss_ep_companion { dev.parse_ss_companion(ptr) }
 			else {}
 		}
 
 		offset += u16(desc_len)
 	}
+}
+
+fn (mut dev UsbDevice) parse_interface_descriptor(ptr &u8) {
+	desc := &InterfaceDescriptor(ptr)
+	dev.interfaces.push(UsbInterface{ desc: *desc, device: dev })
+}
+
+fn (mut dev UsbDevice) parse_hid_descriptor(ptr &u8) {
+	mut iface := dev.interfaces.last() or { return }
+	header := &HidDescriptorHeader(ptr)
+
+	mut pos := sizeof(HidDescriptorHeader)
+	for _ in 0 .. header.num_descriptors {
+		desc_type := unsafe { ptr[pos] }
+		len_lo := unsafe { u16(ptr[pos + 1]) }
+		len_hi := unsafe { u16(ptr[pos + 2]) }
+		desc_len := len_lo | (len_hi << 8)
+
+		if desc_type == defs.desc_report {
+			iface.extra_data.hid_report_desc_len = desc_len
+			return
+		}
+		pos += 3
+	}
+}
+
+fn (mut dev UsbDevice) parse_ss_companion(ptr &u8) {
+	mut iface := dev.interfaces.last() or { return }
+	mut ep := iface.endpoints.last() or { return }
+
+	desc := &SsEndpointCompanionDescriptor(ptr)
+	ep.ss_desc = *desc
+}
+
+fn (mut dev UsbDevice) parse_endpoint_descriptor(ptr &u8) {
+	mut iface := dev.interfaces.last() or { return }
+	desc := &EndpointDescriptor(ptr)
+
+	iface.endpoints.push(UsbEndpoint{ desc: *desc })
+	dev.ep_map.set(desc.endpoint_address, u8(dev.interfaces.len - 1))
 }

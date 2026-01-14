@@ -35,7 +35,7 @@ fn (self Lapic) read(reg u32) u64 {
 	if self.x2apic_mode {
 		return cpu.rdmsr(0x800 + (reg >> 4))
 	} else {
-		return cpu.mmio_in(&u32(self.base_addr + reg))
+		return cpu.mmio_in[u32](self.base_addr + reg)
 	}
 }
 
@@ -43,7 +43,7 @@ fn (self Lapic) write(reg u32, val u64) {
 	if self.x2apic_mode {
 		cpu.wrmsr(0x800 + (reg >> 4), val)
 	} else {
-		cpu.mmio_out(&u32(self.base_addr + reg), u32(val))
+		cpu.mmio_out[u32](self.base_addr + reg, u32(val))
 	}
 }
 

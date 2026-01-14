@@ -83,8 +83,8 @@ fn (mut self Xhci) complete_transfer(slot_id u8, dci u32, code u32, len u32) {
 	}
 
 	slot.usb_device.dispatch_completion(
-		status:        status
-		actual_length: len
-		ep_addr:       if is_in { ep_num | defs.req_dir_in } else { ep_num }
+		status:          status
+		residual_length: len
+		ep_addr:         if is_in { ep_num | defs.req_dir_in } else { ep_num }
 	)
 }

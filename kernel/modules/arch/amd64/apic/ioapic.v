@@ -18,13 +18,13 @@ mut:
 }
 
 fn (self IoApic) read(reg u32) u32 {
-	cpu.mmio_out(&u32(self.base_addr), reg)
-	return cpu.mmio_in(&u32(self.base_addr + 0x10))
+	cpu.mmio_out[u32](self.base_addr, reg)
+	return cpu.mmio_in[u32](self.base_addr + 0x10)
 }
 
 fn (self IoApic) write(reg u32, value u32) {
-	cpu.mmio_out(&u32(self.base_addr), reg)
-	cpu.mmio_out(&u32(self.base_addr + 0x10), value)
+	cpu.mmio_out[u32](self.base_addr, reg)
+	cpu.mmio_out[u32](self.base_addr + 0x10, value)
 }
 
 fn (self IoApic) add_entry(vector u8, irq u32) {

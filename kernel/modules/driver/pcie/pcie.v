@@ -55,24 +55,24 @@ fn scan_bus(segment u16, bus u8) {
 
 fn scan_function(address PciAddress) {
 	base_addr := address.mmio_address()
-	vendor_id := mmio_in[u16](&u16(base_addr))
+	vendor_id := mmio_in[u16](base_addr)
 
 	if vendor_id == 0xffff {
 		return
 	}
 
-	device_id := mmio_in[u16](&u16(base_addr + 0x02))
-	class_rev := mmio_in[u32](&u32(base_addr + 0x08))
+	device_id := mmio_in[u16](base_addr + 0x02)
+	class_rev := mmio_in[u32](base_addr + 0x08)
 	class_code := u8(class_rev >> 24)
 	sub_class := u8(class_rev >> 16)
 	prog_if := u8(class_rev >> 8)
 
-	header_type := mmio_in[u8](&u8(base_addr + 0x0e)) & 0x7f
+	header_type := mmio_in[u8](base_addr + 0x0e) & 0x7f
 	device_type := PciDeviceType.parse(class_code, sub_class)
 
 	match header_type {
 		0x00 {
-			cmd_ptr := &u16(base_addr + 0x04)
+			cmd_ptr := base_addr + 0x04
 			command := mmio_in[u16](cmd_ptr)
 			mmio_out[u16](cmd_ptr, command | 0x7)
 
@@ -92,8 +92,8 @@ fn scan_function(address PciAddress) {
 			pci_devices.push(device)
 		}
 		0x01 {
-			secondary_bus := mmio_in[u8](&u8(base_addr + 0x19))
-			subordinate_bus := mmio_in[u8](&u8(base_addr + 0x1a))
+			secondary_bus := mmio_in[u8](base_addr + 0x19)
+			subordinate_bus := mmio_in[u8](base_addr + 0x1a)
 
 			for bus in secondary_bus .. (subordinate_bus + 1) {
 				scan_bus(address.segment(), bus)

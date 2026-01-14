@@ -1,6 +1,7 @@
 @[has_globals]
 module idt
 
+import gdt
 import log
 
 __global (
@@ -36,7 +37,7 @@ fn register_handler(vector u16, handler voidptr, ist u8, flags u8) {
 
 	idt_entries[vector] = IDTEntry{
 		offset_low: u16(address)
-		selector:   kernel_code_seg
+		selector:   gdt.kernel_code_seg
 		ist:        ist & 0b111
 		flags:      flags
 		offset_mid: u16(address >> 16)

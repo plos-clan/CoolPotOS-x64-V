@@ -5,10 +5,22 @@ pub const desc_configuration = 2
 pub const desc_string = 3
 pub const desc_interface = 4
 pub const desc_endpoint = 5
+pub const desc_device_qualifier = 6
+pub const desc_other_speed_config = 7
+pub const desc_interface_power = 8
+pub const desc_otg = 9
+pub const desc_debug = 10
+pub const desc_interface_association = 11
+
+pub const desc_bos = 15
+pub const desc_device_capability = 16
 pub const desc_ss_ep_companion = 48
 
 pub const desc_hid = 0x21
 pub const desc_report = 0x22
+pub const desc_physical = 0x23
+pub const desc_cs_interface = 0x24
+pub const desc_cs_endpoint = 0x25
 
 pub const req_get_status = 0
 pub const req_clear_feature = 1

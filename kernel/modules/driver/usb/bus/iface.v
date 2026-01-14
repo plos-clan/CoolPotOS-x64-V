@@ -13,12 +13,18 @@ pub mut:
 	ss_desc ?SsEndpointCompanionDescriptor
 }
 
+pub struct UsbExtraData {
+pub mut:
+	hid_report_desc_len u16
+}
+
 pub struct UsbInterface {
 pub mut:
-	device    &UsbDevice = unsafe { nil }
-	desc      InterfaceDescriptor
-	driver    ?UsbDriver
-	endpoints Vec[UsbEndpoint]
+	device     &UsbDevice = unsafe { nil }
+	desc       InterfaceDescriptor
+	driver     ?UsbDriver
+	endpoints  Vec[UsbEndpoint]
+	extra_data UsbExtraData
 }
 
 pub fn (self &UsbInterface) matches(class u8, sub u8, proto u8) bool {
@@ -29,13 +35,13 @@ pub fn (self &UsbInterface) matches(class u8, sub u8, proto u8) bool {
 }
 
 pub fn (self &UsbInterface) find_endpoint(ep_type u8, is_in bool) ?&UsbEndpoint {
-	target_dir := if is_in { defs.req_dir_in } else { 0 }
+	ep_dir := if is_in { defs.req_dir_in } else { 0 }
 
 	for ep in self.endpoints.iter() {
 		cur_dir := ep.desc.endpoint_address & defs.req_dir_in
 		cur_type := ep.desc.attributes & 0x03
 
-		if cur_dir == target_dir && cur_type == ep_type {
+		if cur_dir == ep_dir && cur_type == ep_type {
 			return unsafe { ep }
 		}
 	}

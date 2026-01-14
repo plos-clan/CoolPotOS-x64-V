@@ -7,6 +7,7 @@ const heap_size = 8 * 1024 * 1024
 
 fn C.heap_init(address &u8, size usize) bool
 fn C.malloc(size usize) voidptr
+fn C.calloc(nmemb usize, size usize) voidptr
 fn C.free(voidptr)
 fn C.realloc(ptr voidptr, size usize) voidptr
 

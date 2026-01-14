@@ -25,19 +25,19 @@ pub fn Operational.new(base_addr usize) Operational {
 }
 
 pub fn (self Operational) read_usbcmd() u32 {
-	return mmio_in[u32](&u32(self.base_addr + op_usbcmd_off))
+	return mmio_in[u32](self.base_addr + op_usbcmd_off)
 }
 
 pub fn (self Operational) read_usbsts() u32 {
-	return mmio_in[u32](&u32(self.base_addr + op_usbsts_off))
+	return mmio_in[u32](self.base_addr + op_usbsts_off)
 }
 
 fn (self Operational) write_usbcmd(val u32) {
-	mmio_out[u32](&u32(self.base_addr + op_usbcmd_off), val)
+	mmio_out[u32](self.base_addr + op_usbcmd_off, val)
 }
 
 pub fn (self Operational) write_usbsts(val u32) {
-	mmio_out[u32](&u32(self.base_addr + op_usbsts_off), val)
+	mmio_out[u32](self.base_addr + op_usbsts_off, val)
 }
 
 pub fn (self Operational) start() {
@@ -73,23 +73,23 @@ pub fn (self Operational) set_max_slots_enabled(num u8) {
 }
 
 fn (self Operational) read_config() u32 {
-	return mmio_in[u32](&u32(self.base_addr + op_config_off))
+	return mmio_in[u32](self.base_addr + op_config_off)
 }
 
 fn (self Operational) write_config(val u32) {
-	mmio_out[u32](&u32(self.base_addr + op_config_off), val)
+	mmio_out[u32](self.base_addr + op_config_off, val)
 }
 
 pub fn (self Operational) set_dcbaap(phys_addr u64) {
 	low := u32(phys_addr & 0xffffffff)
 	high := u32(phys_addr >> 32)
-	mmio_out[u32](&u32(self.base_addr + op_dcbaap_off), low)
-	mmio_out[u32](&u32(self.base_addr + op_dcbaap_off + 4), high)
+	mmio_out[u32](self.base_addr + op_dcbaap_off, low)
+	mmio_out[u32](self.base_addr + op_dcbaap_off + 4, high)
 }
 
 pub fn (self Operational) set_crcr(phys_addr u64) {
 	low := u32(phys_addr & 0xffffffff) | 1
 	high := u32(phys_addr >> 32)
-	mmio_out[u32](&u32(self.base_addr + op_crcr_off), low)
-	mmio_out[u32](&u32(self.base_addr + op_crcr_off + 4), high)
+	mmio_out[u32](self.base_addr + op_crcr_off, low)
+	mmio_out[u32](self.base_addr + op_crcr_off + 4, high)
 }

@@ -57,6 +57,16 @@ pub:
 }
 
 @[packed]
+pub struct HidDescriptorHeader {
+pub:
+	length          u8
+	descriptor_type u8
+	bcd_hid         u16
+	country_code    u8
+	num_descriptors u8
+}
+
+@[packed]
 pub struct EndpointDescriptor {
 pub:
 	length           u8

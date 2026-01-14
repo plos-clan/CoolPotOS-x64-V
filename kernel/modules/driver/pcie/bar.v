@@ -31,7 +31,7 @@ pub fn PciBar.scan(base u64) [6]PciBar {
 		}
 
 		offset := u64(0x10) + (u64(i) * 4)
-		reg_ptr := unsafe { &u32(base + offset) }
+		reg_ptr := base + offset
 
 		val_low := mmio_in[u32](reg_ptr)
 
@@ -48,7 +48,7 @@ pub fn PciBar.scan(base u64) [6]PciBar {
 		is_pref := !is_io && (val_low & 0x08) != 0
 
 		if is_64bit {
-			high_ptr := unsafe { &u32(base + offset + 4) }
+			high_ptr := base + offset + 4
 			val_high := mmio_in[u32](high_ptr)
 
 			mmio_out[u32](high_ptr, 0xFFFF_FFFF)

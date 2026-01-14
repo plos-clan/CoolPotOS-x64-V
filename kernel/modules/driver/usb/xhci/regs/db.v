@@ -17,6 +17,6 @@ pub fn Doorbell.new(base_addr usize) Doorbell {
 }
 
 pub fn (self Doorbell) ring(slot_id u8, dci u32) {
-	addr := self.base_addr + usize(slot_id) * 4
-	cpu.mmio_out[u32](&u32(addr), dci)
+	addr := self.base_addr + slot_id * 4
+	cpu.mmio_out[u32](addr, dci)
 }

@@ -3,16 +3,17 @@ module gdt
 
 import log
 
+pub const kernel_code_seg = u16(0x8)
+pub const kernel_data_seg = u16(0x10)
+pub const user_code_seg = u16(0x23)
+pub const user_data_seg = u16(0x1b)
+pub const tss_segment = u16(0x28)
+
 __global (
-	kernel_code_seg = u16(0x8)
-	kernel_data_seg = u16(0x10)
-	user_code_seg   = u16(0x23)
-	user_data_seg   = u16(0x1b)
-	tss_segment     = u16(0x28)
-	gdt_pointer     GDTPointer
-	gdt_entries     [7]u64
-	tss             TaskStateSegment
-	tss_stack       [1024]u8
+	gdt_pointer GDTPointer
+	gdt_entries [7]u64
+	tss         TaskStateSegment
+	tss_stack   [1024]u8
 )
 
 @[packed]

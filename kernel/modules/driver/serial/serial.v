@@ -23,7 +23,7 @@ __global (
 
 struct Serial {
 mut:
-	base_addr u64
+	base_addr usize
 	ready     bool
 }
 
@@ -73,7 +73,7 @@ fn (s &Serial) read_reg(offset u16) u8 {
 	$if amd64 {
 		return cpu.port_in[u8](u16(s.base_addr) + offset)
 	} $else {
-		addr := &u8(s.base_addr + u64(offset))
+		addr := s.base_addr + offset
 		return cpu.mmio_in[u8](addr)
 	}
 }
@@ -82,7 +82,7 @@ fn (s &Serial) write_reg(offset u16, val u8) {
 	$if amd64 {
 		cpu.port_out[u8](u16(s.base_addr) + offset, val)
 	} $else {
-		addr := &u8(s.base_addr + u64(offset))
+		addr := s.base_addr + offset
 		cpu.mmio_out[u8](addr, val)
 	}
 }

@@ -11,7 +11,16 @@ mut:
 
 pub fn (self &Vec[T]) get(index u64) &T {
 	if index >= self.len {
-		log.panic(c'Vec out of bounds')
+		log.panic(c'Vec: out of bounds')
+	}
+	unsafe {
+		return &self.data[index]
+	}
+}
+
+pub fn (self &Vec[T]) try_get(index u64) ?&T {
+	if index >= self.len {
+		return none
 	}
 	unsafe {
 		return &self.data[index]
@@ -38,7 +47,7 @@ pub fn (self &Vec[T]) last() ?&T {
 
 pub fn (mut self Vec[T]) set(index u64, val T) {
 	if index >= self.len {
-		log.panic(c'Vec out of bounds')
+		log.panic(c'Vec: out of bounds')
 	}
 	unsafe {
 		self.data[index] = val
@@ -63,6 +72,10 @@ pub fn (mut self Vec[T]) pop() ?T {
 	unsafe {
 		return self.data[self.len]
 	}
+}
+
+pub fn (mut self Vec[T]) clear() {
+	self.len = 0
 }
 
 pub fn (mut self Vec[T]) free() {

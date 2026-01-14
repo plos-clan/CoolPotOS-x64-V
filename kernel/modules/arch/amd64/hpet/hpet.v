@@ -18,7 +18,7 @@ mut:
 
 pub fn (self Hpet) ticks() u64 {
 	counter_addr := self.base_addr + 0xf0
-	return cpu.mmio_in(&u64(counter_addr))
+	return cpu.mmio_in[u64](counter_addr)
 }
 
 pub fn (self Hpet) elapsed() u64 {
@@ -36,7 +36,7 @@ pub fn (self Hpet) busy_wait(ns u64) {
 
 pub fn (self Hpet) set_timer(value u64) {
 	comparator_addr := self.base_addr + 0x108
-	cpu.mmio_out(&u64(comparator_addr), value)
+	cpu.mmio_out[u64](comparator_addr, value)
 }
 
 pub fn init() {
@@ -45,18 +45,18 @@ pub fn init() {
 	hpet.base_addr = mem.phys_to_virt(hpet_addr)
 
 	period_addr := hpet.base_addr + 0x4
-	hpet.fms_per_tick = cpu.mmio_in(&u32(period_addr))
+	hpet.fms_per_tick = cpu.mmio_in[u32](period_addr)
 	log.debug(c'HPET frequency: %d fms per tick', hpet.fms_per_tick)
 
 	counter_addr := hpet.base_addr + 0xf0
-	cpu.mmio_out(&u64(counter_addr), 0)
+	cpu.mmio_out[u64](counter_addr, 0)
 
 	enable_cnf_addr := hpet.base_addr + 0x10
-	old_cnf := cpu.mmio_in(&u64(enable_cnf_addr))
-	cpu.mmio_out(&u64(enable_cnf_addr), old_cnf | 1)
+	old_cnf := cpu.mmio_in[u64](enable_cnf_addr)
+	cpu.mmio_out[u64](enable_cnf_addr, old_cnf | 1)
 
 	timer_config_addr := hpet.base_addr + 0x100
-	old_config := cpu.mmio_in(&u64(timer_config_addr))
+	old_config := cpu.mmio_in[u64](timer_config_addr)
 
 	route_cap := old_config >> 32
 	if (route_cap & (u64(1) << u64(apic.IrqVector.hpet_timer))) == 1 {
@@ -65,5 +65,5 @@ pub fn init() {
 	}
 
 	timer_config := u64(apic.IrqVector.hpet_timer) << 9 | 1 << 2
-	cpu.mmio_out(&u64(timer_config_addr), timer_config)
+	cpu.mmio_out[u64](timer_config_addr, timer_config)
 }

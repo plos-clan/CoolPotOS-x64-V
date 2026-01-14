@@ -33,7 +33,7 @@ fn PciAddress.new(seg u16, bus u8, dev u8, func u8) PciAddress {
 
 fn (address PciAddress) has_multi_funcs() bool {
 	base_addr := address.mmio_address()
-	header_type := mmio_in[u8](&u8(base_addr + 0x0E))
+	header_type := mmio_in[u8](base_addr + 0x0e)
 	return (header_type & 0x80) != 0
 }
 

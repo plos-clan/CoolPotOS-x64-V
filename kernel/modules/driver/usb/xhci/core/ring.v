@@ -53,7 +53,7 @@ fn (mut self CommandRing) link_to_start() {
 	link_idx := self.enqueue_idx
 
 	mut link_trb := Trb{
-		param_low:  u32(self.phys_addr & 0xFFFFFFFF)
+		param_low:  u32(self.phys_addr & 0xffffffff)
 		param_high: u32(self.phys_addr >> 32)
 		status:     0
 		control:    6 << 10
@@ -81,10 +81,10 @@ pub mut:
 	capacity    u32
 	dequeue_idx u32
 	cycle_state bool
-	erdp_reg    &u32 = unsafe { nil }
+	erdp_reg    usize
 }
 
-pub fn EventRing.new(erdp_reg &u32) EventRing {
+pub fn EventRing.new(erdp_reg usize) EventRing {
 	ring_virt, ring_phys := kernel_page_table.alloc_dma(1)
 	trb_count := u32(0x1000 / sizeof(Trb))
 
@@ -94,7 +94,7 @@ pub fn EventRing.new(erdp_reg &u32) EventRing {
 		capacity:    trb_count
 		dequeue_idx: 0
 		cycle_state: true
-		erdp_reg:    unsafe { erdp_reg }
+		erdp_reg:    erdp_reg
 	}
 }
 
@@ -128,11 +128,11 @@ pub fn (self EventRing) update_erdp() {
 	current_phys := self.phys_addr + u64(self.dequeue_idx * 16)
 	val_to_write := current_phys | (1 << 3)
 
-	low := u32(val_to_write & 0xFFFFFFFF)
+	low := u32(val_to_write & 0xffffffff)
 	high := u32(val_to_write >> 32)
 
 	cpu.mmio_out[u32](self.erdp_reg, low)
-	cpu.mmio_out[u32](self.erdp_reg + 1, high)
+	cpu.mmio_out[u32](self.erdp_reg + 4, high)
 }
 
 pub struct TransferRing {
@@ -180,7 +180,7 @@ pub fn (mut self TransferRing) enqueue(trb Trb) {
 fn (mut self TransferRing) link_to_start() {
 	link_idx := self.enqueue_idx
 	mut link_trb := Trb{
-		param_low:  u32(self.phys_addr & 0xFFFFFFFF)
+		param_low:  u32(self.phys_addr & 0xffffffff)
 		param_high: u32(self.phys_addr >> 32)
 		control:    (u32(trb_link) << 10) | (1 << 1)
 	}

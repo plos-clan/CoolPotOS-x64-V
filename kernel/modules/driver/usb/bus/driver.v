@@ -23,9 +23,9 @@ pub enum TransferStatus {
 @[params]
 pub struct CompletionEvent {
 pub:
-	ep_addr       u8
-	status        TransferStatus
-	actual_length u32
+	ep_addr         u8
+	status          TransferStatus
+	residual_length u32
 }
 
 pub interface UsbDriver {

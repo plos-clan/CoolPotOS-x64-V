@@ -17,12 +17,12 @@ struct C.TerminalDisplay {
 	blue_mask_shift  u8
 }
 
-fn C.terminal_init(&C.TerminalDisplay, f32, fn (usize), fn (voidptr))
-fn C.terminal_flush()
-fn C.terminal_process_byte(char)
-fn C.terminal_handle_keyboard(u8)
-fn C.terminal_handle_mouse_scroll(isize)
-fn C.terminal_set_scroll_speed(usize)
-fn C.terminal_set_auto_flush(bool)
-fn C.terminal_set_crnl_mapping(bool)
-fn C.terminal_set_pty_writer(fn (&u8))
+fn C.terminal_new(&C.TerminalDisplay, f32, fn (usize), fn (voidptr)) voidptr
+fn C.terminal_flush(voidptr)
+fn C.terminal_process_byte(voidptr, char)
+fn C.terminal_handle_keyboard(voidptr, u8)
+fn C.terminal_handle_mouse_scroll(voidptr, isize)
+fn C.terminal_set_scroll_speed(voidptr, usize)
+fn C.terminal_set_auto_flush(voidptr, bool)
+fn C.terminal_set_crnl_mapping(voidptr, bool)
+fn C.terminal_set_pty_writer(voidptr, fn (&u8, usize))

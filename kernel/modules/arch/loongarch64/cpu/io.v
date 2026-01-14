@@ -1,6 +1,6 @@
 module cpu
 
-pub fn mmio_in[T](addr &T) T {
+pub fn mmio_in[T](addr usize) T {
 	mut ret := T(0)
 	unsafe {
 		$if sizeof(T) == 1 {
@@ -36,7 +36,7 @@ pub fn mmio_in[T](addr &T) T {
 	return ret
 }
 
-pub fn mmio_out[T](addr &T, value T) {
+pub fn mmio_out[T](addr usize, value T) {
 	unsafe {
 		$if sizeof(T) == 1 {
 			asm volatile loongarch64 {

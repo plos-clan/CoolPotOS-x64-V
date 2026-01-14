@@ -18,31 +18,31 @@ pub fn Capability.new(base_addr usize) Capability {
 }
 
 pub fn (self Capability) length() u8 {
-	return mmio_in[u8](&u8(self.base_addr))
+	return mmio_in[u8](self.base_addr)
 }
 
 pub fn (self Capability) version() u16 {
-	return mmio_in[u16](&u16(self.base_addr + 0x02))
+	return mmio_in[u16](self.base_addr + 0x02)
 }
 
 fn (self Capability) hcsparams1() u32 {
-	return mmio_in[u32](&u32(self.base_addr + 0x04))
+	return mmio_in[u32](self.base_addr + 0x04)
 }
 
 fn (self Capability) hcsparams2() u32 {
-	return mmio_in[u32](&u32(self.base_addr + 0x08))
+	return mmio_in[u32](self.base_addr + 0x08)
 }
 
 fn (self Capability) hccparams1() u32 {
-	return mmio_in[u32](&u32(self.base_addr + 0x10))
+	return mmio_in[u32](self.base_addr + 0x10)
 }
 
 pub fn (self Capability) db_off() u32 {
-	return mmio_in[u32](&u32(self.base_addr + 0x14)) & ~u32(0x3)
+	return mmio_in[u32](self.base_addr + 0x14) & ~u32(0x3)
 }
 
 pub fn (self Capability) rts_off() u32 {
-	return mmio_in[u32](&u32(self.base_addr + 0x18)) & ~u32(0x1f)
+	return mmio_in[u32](self.base_addr + 0x18) & ~u32(0x1f)
 }
 
 pub fn (self Capability) max_slots() u8 {
