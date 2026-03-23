@@ -12,14 +12,15 @@ $if amd64 {
 
 pub struct Xhci implements bus.HostController {
 pub mut:
-	cap        regs.Capability
-	op         regs.Operational
-	ctx_size   int
-	dcbaa_virt &u64 = unsafe { nil }
-	cmd_ring   CommandRing
-	event_ring EventRing
-	doorbell   regs.Doorbell
-	slots      [256]Slot
+	cap           regs.Capability
+	op            regs.Operational
+	ctx_size      int
+	dcbaa_virt    &u64 = unsafe { nil }
+	cmd_ring      CommandRing
+	event_ring    EventRing
+	doorbell      regs.Doorbell
+	slots         [256]Slot
+	pending_ports [256]bool
 }
 
 pub fn Xhci.new(base_addr usize) &Xhci {
@@ -48,6 +49,18 @@ pub fn (mut self Xhci) poll() {
 	}
 	if need_update {
 		self.event_ring.update_erdp()
+	}
+
+	max_ports := self.cap.max_ports()
+	for i in 0 .. max_ports {
+		if !self.pending_ports[i] {
+			continue
+		}
+
+		self.pending_ports[i] = false
+		log.info(c'Port %d status change', i + 1)
+		mut port := regs.Port.new(self.op.base_addr, i)
+		self.handle_port(port)
 	}
 }
 
@@ -129,9 +142,9 @@ fn (mut self Xhci) handle_one_event(evt Trb) {
 		}
 		trb_port_status_change {
 			port_id := evt.param_low >> 24
-			log.info(c'Port %d status change', port_id)
-			mut port := regs.Port.new(self.op.base_addr, int(port_id - 1))
-			self.handle_port(port)
+			if port_id > 0 && port_id <= u32(self.cap.max_ports()) {
+				self.pending_ports[port_id - 1] = true
+			}
 		}
 		trb_cmd_completion {
 			log.debug(c'Stale command completion ignored')

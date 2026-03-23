@@ -18,7 +18,7 @@ pub fn (mut self Xhci) address_device(port_id int, slot_id u8, speed_id u32) ? {
 		active:       true
 		port_id:      port_id
 		speed:        speed_id
-		out_ctx_virt: &u64(out_ctx_virt)
+		out_ctx_virt: &u8(out_ctx_virt)
 		out_ctx_phys: u64(out_ctx_phys)
 	}
 	self.slots[slot_id].rings[1] = ep0_ring
@@ -194,7 +194,7 @@ fn (mut self Xhci) cleanup_slot_on_failure(slot_id u8) {
 
 	if self.slots[slot_id].out_ctx_virt != 0 {
 		virt_addr := self.slots[slot_id].out_ctx_virt
-		kernel_page_table.dealloc_dma(virt_addr, 1)
+		kernel_page_table.dealloc_dma(u64(virt_addr), 1)
 		self.slots[slot_id].out_ctx_virt = unsafe { nil }
 	}
 

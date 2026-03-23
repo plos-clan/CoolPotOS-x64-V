@@ -3,9 +3,10 @@ module utils
 import log
 
 pub struct Vec[T] {
+pub mut:
+	len u64
 mut:
 	data &T = unsafe { nil }
-	len  u64
 	cap  u64
 }
 

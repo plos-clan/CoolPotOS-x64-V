@@ -17,10 +17,11 @@ mut:
 }
 
 pub struct HashMap[K, V] {
+pub mut:
+	len u64
 mut:
 	entries &Entry[K, V] = unsafe { nil }
 	cap     u64
-	len     u64
 	dead    u64
 }
 

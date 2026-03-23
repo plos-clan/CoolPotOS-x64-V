@@ -1,6 +1,7 @@
 module core
 
 import log
+import regs { LegacySupport }
 
 $if amd64 {
 	import arch.amd64.cpu
@@ -36,6 +37,35 @@ fn (self &Xhci) wait_reset_complete() bool {
 		cpu.spin_hint()
 	}
 	return false
+}
+
+fn (self &Xhci) wait_bios_release(legacy LegacySupport) bool {
+	for _ in 0 .. 1_000_000 {
+		if !legacy.bios_owned() {
+			return true
+		}
+		cpu.spin_hint()
+	}
+	return false
+}
+
+pub fn (self &Xhci) take_ownership() bool {
+	legacy := self.cap.legacy_support() or { return true }
+
+	if legacy.bios_owned() {
+		log.debug(c'Requesting xHCI ownership from BIOS')
+		legacy.request_os_ownership()
+
+		if !self.wait_bios_release(legacy) {
+			log.error(c'xHCI BIOS handoff timed out')
+			return false
+		}
+
+		log.debug(c'xHCI BIOS ownership released')
+	}
+
+	legacy.sanitize_smi()
+	return true
 }
 
 pub fn (self &Xhci) reset_controller() bool {

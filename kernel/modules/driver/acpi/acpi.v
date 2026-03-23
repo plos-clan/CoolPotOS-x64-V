@@ -42,10 +42,10 @@ struct GenericAddress {
 
 pub fn init() {
 	rsdp = unsafe { &Rsdp(rsdp_request.response.address) }
-	use_xsdt = rsdp.revision != 0
+	use_xsdt = rsdp.revision >= 2 && rsdp.xsdt_address != 0
 	log.debug(c'ACPI revision: %d', rsdp.revision)
 
-	rsdt_addr := if use_xsdt { u64(rsdp.xsdt_address) } else { rsdp.rsdt_address }
+	rsdt_addr := if use_xsdt { rsdp.xsdt_address } else { u64(rsdp.rsdt_address) }
 	root_sdt = RootSdt.init(rsdt_addr)
 	log.debug(c'ACPI root SDT at %#p', rsdt_addr)
 

@@ -4,6 +4,7 @@ OUTPUT_IMG = $(BUILD_DIR)/CoolPotOS-$(ARCH).img
 
 CFLAGS = -w -O3 -I./kernel/c -Ilibs -nostdinc -fno-builtin
 CFLAGS += -ffunction-sections -fdata-sections -fno-stack-protector
+CFLAGS += -Wno-incompatible-pointer-types
 
 VFLAGS = -w -manualfree -gc none -no-builtin -no-preludes
 VFLAGS += -nofloat -d no_backtrace -no-bounds-checking

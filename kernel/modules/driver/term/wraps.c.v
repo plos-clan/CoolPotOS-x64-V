@@ -19,7 +19,7 @@ struct C.TerminalDisplay {
 
 fn C.terminal_new(&C.TerminalDisplay, f32, fn (usize), fn (voidptr)) voidptr
 fn C.terminal_flush(voidptr)
-fn C.terminal_process_byte(voidptr, char)
+fn C.terminal_process_byte(voidptr, u8)
 fn C.terminal_handle_keyboard(voidptr, u8)
 fn C.terminal_handle_mouse_scroll(voidptr, isize)
 fn C.terminal_set_scroll_speed(voidptr, usize)

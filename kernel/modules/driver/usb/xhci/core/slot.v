@@ -9,7 +9,7 @@ pub mut:
 	port_id      int
 	speed        u32
 	usb_device   &UsbDevice = unsafe { nil }
-	out_ctx_virt &u64       = unsafe { nil }
+	out_ctx_virt &u8        = unsafe { nil }
 	out_ctx_phys u64
 	rings        [32]TransferRing
 }

@@ -23,11 +23,7 @@ pub fn update() {
 }
 
 fn pty_writer(buf &u8, size usize) {
-	unsafe {
-		for i in 0 .. size {
-			term_buffer.push(buf[i])
-		}
-	}
+	term_buffer.push_many(buf, u64(size))
 }
 
 pub fn init() {

@@ -48,3 +48,18 @@ pub fn (self &UsbInterface) find_endpoint(ep_type u8, is_in bool) ?&UsbEndpoint 
 
 	return none
 }
+
+pub fn (self &UsbInterface) find_sibling(class u8, sub u8, proto u8) ?&UsbInterface {
+	if self.device == unsafe { nil } {
+		return none
+	}
+
+	for iface in self.device.interfaces.iter() {
+		if iface.desc.interface_number != self.desc.interface_number
+			&& iface.matches(class, sub, proto) {
+			return unsafe { iface }
+		}
+	}
+
+	return none
+}

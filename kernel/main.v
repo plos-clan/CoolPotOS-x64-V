@@ -8,6 +8,7 @@ import driver.pcie
 import driver.serial as _
 import driver.term
 import driver.usb
+import driver.usb.xhci
 import mem
 
 $if amd64 {
@@ -62,7 +63,7 @@ pub fn main() {
 	usb.init()
 
 	for {
-		xhci_temp.poll()
+		xhci.poll_controllers()
 		cpu.hcf()
 	}
 }
