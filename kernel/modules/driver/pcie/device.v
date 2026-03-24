@@ -12,6 +12,7 @@ pub:
 	prog_if     u8
 	revision    u8
 	bars        [6]PciBar
+	interrupt   ?PciInterrupt
 	device_type PciDeviceType
 }
 

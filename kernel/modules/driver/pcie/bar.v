@@ -20,80 +20,64 @@ pub:
 	prefetchable bool
 }
 
-pub fn PciBar.scan(base u64) [6]PciBar {
-	mut bars := [6]PciBar{}
-	mut skip_next := false
+pub fn PciBar.read(base u64, index u8) ?PciBar {
+	offset := u64(0x10) + (u64(index) * 4)
+	reg_ptr := base + offset
 
-	for i in 0 .. 6 {
-		if skip_next {
-			skip_next = false
-			continue
-		}
+	val_low := mmio_in[u32](reg_ptr)
 
-		offset := u64(0x10) + (u64(i) * 4)
-		reg_ptr := base + offset
-
-		val_low := mmio_in[u32](reg_ptr)
-
-		if val_low == 0 {
-			continue
-		}
-
-		mmio_out[u32](reg_ptr, 0xFFFF_FFFF)
-		mask_low := mmio_in[u32](reg_ptr)
-		mmio_out[u32](reg_ptr, val_low)
-
-		is_io := (val_low & 1) != 0
-		is_64bit := !is_io && (val_low & 0x07) == 0x04
-		is_pref := !is_io && (val_low & 0x08) != 0
-
-		if is_64bit {
-			high_ptr := base + offset + 4
-			val_high := mmio_in[u32](high_ptr)
-
-			mmio_out[u32](high_ptr, 0xFFFF_FFFF)
-			mask_high := mmio_in[u32](high_ptr)
-			mmio_out[u32](high_ptr, val_high)
-
-			mem_mask := ~u32(0xF)
-			address := (u64(val_high) << 32) | u64(val_low & mem_mask)
-			encoded_mask := (u64(mask_high) << 32) | u64(mask_low & mem_mask)
-			size := ~encoded_mask + 1
-
-			bars[i] = PciBar{
-				bar_type:     .memory64
-				address:      address
-				size:         size
-				prefetchable: is_pref
-			}
-
-			skip_next = true
-		} else {
-			if is_io {
-				io_mask := ~u32(0x3)
-				address := u64(val_low & io_mask)
-				size := u64(~(mask_low & io_mask) + 1)
-
-				bars[i] = PciBar{
-					bar_type:     .io
-					address:      address
-					size:         size
-					prefetchable: false
-				}
-			} else {
-				mem_mask := ~u32(0xF)
-				address := u64(val_low & mem_mask)
-				size := u64(~(mask_low & mem_mask) + 1)
-
-				bars[i] = PciBar{
-					bar_type:     .memory32
-					address:      address
-					size:         size
-					prefetchable: is_pref
-				}
-			}
-		}
+	if val_low == 0 {
+		return none
 	}
 
-	return bars
+	mmio_out[u32](reg_ptr, 0xFFFF_FFFF)
+	mask_low := mmio_in[u32](reg_ptr)
+	mmio_out[u32](reg_ptr, val_low)
+
+	is_io := (val_low & 1) != 0
+	is_64bit := !is_io && (val_low & 0x07) == 0x04
+	is_pref := !is_io && (val_low & 0x08) != 0
+
+	if is_64bit {
+		high_ptr := base + offset + 4
+		val_high := mmio_in[u32](high_ptr)
+
+		mmio_out[u32](high_ptr, 0xFFFF_FFFF)
+		mask_high := mmio_in[u32](high_ptr)
+		mmio_out[u32](high_ptr, val_high)
+
+		mem_mask := ~u32(0xF)
+		address := (u64(val_high) << 32) | u64(val_low & mem_mask)
+		encoded_mask := (u64(mask_high) << 32) | u64(mask_low & mem_mask)
+		size := ~encoded_mask + 1
+
+		return PciBar{
+			bar_type:     .memory64
+			address:      address
+			size:         size
+			prefetchable: is_pref
+		}
+	} else if is_io {
+		io_mask := ~u32(0x3)
+		address := u64(val_low & io_mask)
+		size := u64(~(mask_low & io_mask) + 1)
+
+		return PciBar{
+			bar_type:     .io
+			address:      address
+			size:         size
+			prefetchable: false
+		}
+	} else {
+		mem_mask := ~u32(0xF)
+		address := u64(val_low & mem_mask)
+		size := u64(~(mask_low & mem_mask) + 1)
+
+		return PciBar{
+			bar_type:     .memory32
+			address:      address
+			size:         size
+			prefetchable: is_pref
+		}
+	}
 }

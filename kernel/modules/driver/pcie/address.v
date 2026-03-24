@@ -1,13 +1,13 @@
 module pcie
 
+import mem
+import log
+
 $if amd64 {
 	import arch.amd64.cpu { mmio_in }
 } $else {
 	import arch.loongarch64.cpu { mmio_in }
 }
-
-import mem
-import log
 
 type PciAddress = u32
 

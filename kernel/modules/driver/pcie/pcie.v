@@ -1,12 +1,6 @@
 @[has_globals]
 module pcie
 
-$if amd64 {
-	import arch.amd64.cpu { mmio_in, mmio_out }
-} $else {
-	import arch.loongarch64.cpu { mmio_in, mmio_out }
-}
-
 import mem
 import utils { Vec }
 
@@ -55,47 +49,43 @@ fn scan_bus(segment u16, bus u8) {
 
 fn scan_function(address PciAddress) {
 	base_addr := address.mmio_address()
-	vendor_id := mmio_in[u16](base_addr)
+	header := PciHeader{base_addr}
 
+	vendor_id := header.vendor_id()
 	if vendor_id == 0xffff {
 		return
 	}
 
-	device_id := mmio_in[u16](base_addr + 0x02)
-	class_rev := mmio_in[u32](base_addr + 0x08)
-	class_code := u8(class_rev >> 24)
-	sub_class := u8(class_rev >> 16)
-	prog_if := u8(class_rev >> 8)
-
-	header_type := mmio_in[u8](base_addr + 0x0e) & 0x7f
+	class_code := header.class_code()
+	sub_class := header.sub_class()
 	device_type := PciDeviceType.parse(class_code, sub_class)
 
-	match header_type {
+	match header.header_type() {
 		0x00 {
-			cmd_ptr := base_addr + 0x04
-			command := mmio_in[u16](cmd_ptr)
-			mmio_out[u16](cmd_ptr, command | 0x7)
+			endpoint := EndpointHeader{header}
+			base_flags := pci_cmd_memory_space | pci_cmd_io_space | pci_cmd_bus_master
+			header.update_command(base_flags, true)
+			header.update_command(pci_cmd_intx_disable, true)
 
 			device := PciDevice{
 				address:     address
 				vendor_id:   vendor_id
-				device_id:   device_id
+				device_id:   header.device_id()
 				class_code:  class_code
 				sub_class:   sub_class
-				prog_if:     prog_if
-				revision:    u8(class_rev)
+				prog_if:     header.prog_if()
+				revision:    header.revision()
 				device_type: device_type
-				bars:        PciBar.scan(base_addr)
+				bars:        endpoint.bars()
+				interrupt:   PciInterrupt.resolve(endpoint)
 			}
 
 			device.print_info()
 			pci_devices.push(device)
 		}
 		0x01 {
-			secondary_bus := mmio_in[u8](base_addr + 0x19)
-			subordinate_bus := mmio_in[u8](base_addr + 0x1a)
-
-			for bus in secondary_bus .. (subordinate_bus + 1) {
+			bridge := BridgeHeader{header}
+			for bus in bridge.secondary_bus() .. (bridge.subordinate_bus() + 1) {
 				scan_bus(address.segment(), bus)
 			}
 		}
