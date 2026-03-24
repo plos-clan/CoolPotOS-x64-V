@@ -1,6 +1,5 @@
 module core
 
-import log
 import regs
 
 pub fn (mut self Xhci) setup_command_ring() {

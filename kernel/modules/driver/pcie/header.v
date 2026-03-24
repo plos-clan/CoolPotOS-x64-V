@@ -11,6 +11,22 @@ pub const pci_cmd_memory_space = u16(1 << 1)
 pub const pci_cmd_bus_master = u16(1 << 2)
 pub const pci_cmd_intx_disable = u16(1 << 10)
 
+pub enum HeaderType {
+	endpoint       
+	pci_pci_bridge 
+	cardbus_bridge 
+	unknown        
+}
+
+pub fn HeaderType.parse(value u8) HeaderType {
+	return match value & 0x7f {
+		0x00 { .endpoint }
+		0x01 { .pci_pci_bridge }
+		0x02 { .cardbus_bridge }
+		else { .unknown }
+	}
+}
+
 pub struct PciHeader {
 pub:
 	base_addr u64
@@ -48,8 +64,9 @@ pub fn (h PciHeader) revision() u8 {
 	return mmio_in[u8](h.base_addr + 0x08)
 }
 
-pub fn (h PciHeader) header_type() u8 {
-	return mmio_in[u8](h.base_addr + 0x0e) & 0x7f
+pub fn (h PciHeader) header_type() HeaderType {
+	val := mmio_in[u8](h.base_addr + 0x0e) & 0x7f
+	return HeaderType.parse(val)
 }
 
 pub fn (h PciHeader) interrupt_line() u8 {

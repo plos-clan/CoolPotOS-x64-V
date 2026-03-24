@@ -43,7 +43,7 @@ fn (address PciAddress) mmio_address() u64 {
 	deivce := u64(address.device())
 	function := u64(address.function())
 
-	for i in 0..pci_regions.length {
+	for i in 0 .. pci_regions.length {
 		entry := pci_regions.at(i)
 
 		if entry.pci_seg_group != segment {

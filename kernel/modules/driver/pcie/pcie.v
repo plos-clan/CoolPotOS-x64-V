@@ -61,7 +61,7 @@ fn scan_function(address PciAddress) {
 	device_type := PciDeviceType.parse(class_code, sub_class)
 
 	match header.header_type() {
-		0x00 {
+		.endpoint {
 			endpoint := EndpointHeader{header}
 			base_flags := pci_cmd_memory_space | pci_cmd_io_space | pci_cmd_bus_master
 			header.update_command(base_flags, true)
@@ -83,7 +83,7 @@ fn scan_function(address PciAddress) {
 			device.print_info()
 			pci_devices.push(device)
 		}
-		0x01 {
+		.pci_pci_bridge {
 			bridge := BridgeHeader{header}
 			for bus in bridge.secondary_bus() .. (bridge.subordinate_bus() + 1) {
 				scan_bus(address.segment(), bus)
