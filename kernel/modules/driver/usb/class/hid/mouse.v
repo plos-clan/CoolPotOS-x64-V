@@ -99,7 +99,7 @@ fn (mut self Mouse) handle_completion(event CompletionEvent) {
 		return
 	}
 
-	if event.status != .completed {
+	if event.status != .completed && event.status != .short_packet {
 		log.warn(c'Mouse: transfer failed (%d)', event.status)
 		return
 	}

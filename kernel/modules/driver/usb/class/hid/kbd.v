@@ -99,7 +99,8 @@ fn (mut self Keyboard) handle_completion(event CompletionEvent) {
 	if event.ep_addr != self.hid.ep_addr {
 		return
 	}
-	if event.status != .completed {
+
+	if event.status != .completed && event.status != .short_packet {
 		log.warn(c'KBD: Transfer failed (%d)', event.status)
 		return
 	}

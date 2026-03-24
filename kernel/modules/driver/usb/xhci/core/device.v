@@ -93,6 +93,33 @@ pub fn (mut self Xhci) configure_endpoints(slot_id u8, endpoints &Vec[UsbEndpoin
 	}
 }
 
+pub fn (mut self Xhci) update_ep0_mps(slot_id u8, new_mps u32) ? {
+	in_ctx_virt, in_ctx_phys := kernel_page_table.alloc_dma(1)
+	defer { kernel_page_table.dealloc_dma(in_ctx_virt, 1) }
+
+	mut src := self.slots[slot_id].out_ctx_virt
+	mut dst := &u8(in_ctx_virt + u64(self.ctx_size))
+	for i in 0 .. (self.ctx_size * 2) {
+		unsafe {
+			dst[i] = src[i]
+		}
+	}
+
+	mut ctrl_ctx := InputControlContext.from(in_ctx_virt)
+	ctrl_ctx.add_flags = (1 << 1)
+
+	mut ep0_ctx := EndpointContext.from(in_ctx_virt, 1, self.ctx_size)
+	ep0_ctx.info2 = (ep0_ctx.info2 & ~u32(0xffff0000)) | ((new_mps & 0xffff) << 16)
+
+	cmd := Trb.new_evaluate_context(in_ctx_phys, slot_id)
+	code, _ := self.send_command(cmd) or { return none }
+
+	if code != 1 {
+		log.error(c'Evaluate Context failed: %d', code)
+		return none
+	}
+}
+
 fn (mut self Xhci) setup_one_endpoint(slot_id u8, ctx_base u64, ep &UsbEndpoint) ?u32 {
 	addr := ep.desc.endpoint_address
 	ep_num := addr & 0x0f

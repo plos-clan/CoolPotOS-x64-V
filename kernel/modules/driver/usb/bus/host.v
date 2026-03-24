@@ -22,6 +22,7 @@ pub mut:
 
 pub interface HostController {
 mut:
+	update_ep0_mps(slot_id u8, mps u32) ?
 	configure_endpoints(slot_id u8, endpoints &Vec[UsbEndpoint]) ?
 	submit_control(args ControlTransferArgs) ?
 	submit_transfer(args GeneralTransferArgs) ?

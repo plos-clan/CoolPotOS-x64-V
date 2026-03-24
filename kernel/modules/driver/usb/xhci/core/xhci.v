@@ -65,8 +65,6 @@ pub fn (mut self Xhci) poll() {
 }
 
 pub fn (mut self Xhci) test_command_ring() ? {
-	log.info(c'Testing command ring with no op')
-
 	cmd := Trb.new_no_op_cmd()
 
 	code, _ := self.send_command(cmd) or {

@@ -17,6 +17,7 @@ pub const trb_enable_slot = 9
 pub const trb_disable_slot = 10
 pub const trb_address_device = 11
 pub const trb_configure_endpoint = 12
+pub const trb_evaluate_context = 13
 pub const trb_no_op_cmd = 23
 pub const trb_transfer_event = 32
 pub const trb_cmd_completion = 33
@@ -93,7 +94,7 @@ pub fn Trb.new_data_stage(buffer u64, len u32, dir_in bool) Trb {
 		param_low:  u32(buffer)
 		param_high: u32(buffer >> 32)
 		status:     len
-		control:    (u32(trb_data_stage) << 10) | dir_bit | trb_chain
+		control:    (u32(trb_data_stage) << 10) | dir_bit
 	}
 }
 
@@ -117,5 +118,13 @@ pub fn Trb.new_configure_endpoint(ctx_ptr u64, slot_id u8) Trb {
 		param_low:  u32(ctx_ptr)
 		param_high: u32(ctx_ptr >> 32)
 		control:    (u32(trb_configure_endpoint) << 10) | (u32(slot_id) << 24)
+	}
+}
+
+pub fn Trb.new_evaluate_context(ctx_ptr u64, slot_id u8) Trb {
+	return Trb{
+		param_low:  u32(ctx_ptr)
+		param_high: u32(ctx_ptr >> 32)
+		control:    (u32(trb_evaluate_context) << 10) | (u32(slot_id) << 24)
 	}
 }

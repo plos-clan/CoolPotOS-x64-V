@@ -58,6 +58,28 @@ pub fn (mut self Queue[T]) pop() ?T {
 	return val
 }
 
+pub fn (mut self Queue[T]) consume(count usize) {
+	if count == 0 {
+		return
+	}
+
+	head := cpu.load(&self.head)
+	tail := cpu.load(&self.tail)
+	available := (head - tail) & self.mask
+
+	mut to_consume := count
+	if to_consume > available {
+		to_consume = available
+	}
+
+	if to_consume == 0 {
+		return
+	}
+
+	new_tail := (tail + to_consume) & self.mask
+	cpu.store(mut &self.tail, new_tail)
+}
+
 pub fn (mut self Queue[T]) peek_chunk() (&T, usize) {
 	if voidptr(self.buf) == 0 {
 		return unsafe { nil }, 0
@@ -77,11 +99,6 @@ pub fn (mut self Queue[T]) peek_chunk() (&T, usize) {
 	}
 
 	return unsafe { &self.buf[tail] }, len
-}
-
-pub fn (mut self Queue[T]) consume(count usize) {
-	tail := cpu.load(&self.tail)
-	cpu.store(mut &self.tail, (tail + count) & self.mask)
 }
 
 pub fn (mut self Queue[T]) push_many(vals &T, count usize) usize {

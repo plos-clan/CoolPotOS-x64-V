@@ -72,30 +72,22 @@ pub fn (self Capability) max_scratchpad_bufs() u32 {
 }
 
 pub fn (self Capability) legacy_support() ?LegacySupport {
+	addr := self.find_ext_cap(1)?
+	return LegacySupport.new(addr)
+}
+
+pub fn (self Capability) find_ext_cap(target_id u8) ?usize {
 	mut off := self.xecp()
-	for _ in 0 .. 32 {
-		if off == 0 {
-			return none
-		}
-
+	
+	for i := 0; off != 0 && i < 32; i++ {
 		addr := self.base_addr + usize(off)
-		header := mmio_in[u32](addr)
-		if header == 0 {
-			return none
-		}
-
-		cap_id := header & 0xff
-		if cap_id == 1 {
-			return LegacySupport.new(addr)
-		}
-
-		next := ((header >> 8) & 0xff) << 2
-		if next == 0 {
-			return none
-		}
-
-		off += next
+		hdr := mmio_in[u32](addr)
+		
+		if (hdr & 0xff) == u32(target_id) { return addr }
+		if (hdr & 0xff00) == 0 { break }
+		
+		off += ((hdr >> 8) & 0xff) << 2
 	}
-
+	
 	return none
 }

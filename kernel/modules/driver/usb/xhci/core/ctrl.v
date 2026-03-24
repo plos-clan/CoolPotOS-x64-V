@@ -69,8 +69,6 @@ pub fn (self &Xhci) take_ownership() bool {
 }
 
 pub fn (self &Xhci) reset_controller() bool {
-	log.debug(c'Resetting xHCI controller')
-
 	if self.op.is_running() {
 		log.debug(c'Controller is running, stopping')
 		self.op.stop()

@@ -21,6 +21,28 @@ pub fn (mut dev UsbDevice) enumerate() ? {
 			request_type: defs.req_dir_in
 			request:      defs.req_get_descriptor
 			value:        (u16(defs.desc_device) << 8) | 0
+			length:       8
+		}
+		buffer_phys: desc_phys
+	)?
+
+	mut mps0 := u32(unsafe { &u8(desc_virt)[7] })
+
+	if mps0 != 0 {
+		if dev.speed >= defs.speed_super {
+			mps0 = 1 << mps0
+		}
+		dev.host.update_ep0_mps(dev.slot_id, mps0) or {
+			log.error(c'Failed to update EP0 MPS for slot %d', dev.slot_id)
+			return none
+		}
+	}
+
+	dev.submit_control(
+		setup:       SetupPacket{
+			request_type: defs.req_dir_in
+			request:      defs.req_get_descriptor
+			value:        (u16(defs.desc_device) << 8) | 0
 			length:       u16(sizeof(DeviceDescriptor))
 		}
 		buffer_phys: desc_phys
@@ -67,6 +89,9 @@ pub fn (mut dev UsbDevice) enumerate() ? {
 	defer { endpoints.free() }
 
 	for iface in dev.interfaces.iter() {
+		if iface.desc.alternate_setting != 0 {
+			continue
+		}
 		for endpoint in iface.endpoints.iter() {
 			endpoints.push(*endpoint)
 		}

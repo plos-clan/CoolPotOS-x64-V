@@ -68,6 +68,6 @@ fn (self Port) read_portsc() u32 {
 
 pub fn (self Port) update_portsc(mask u32) {
 	val := self.read_portsc()
-	write_val := (val & ~u32(port_rw1c_mask)) | mask
+	write_val := (val & ~u32(port_rw1c_mask | port_ped | port_pr)) | mask
 	cpu.mmio_out[u32](self.base_addr, write_val)
 }

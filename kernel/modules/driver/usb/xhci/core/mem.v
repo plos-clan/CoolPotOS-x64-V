@@ -18,7 +18,6 @@ pub fn (mut self Xhci) setup_dcbaa(max_slots u8) {
 	}
 
 	self.op.set_dcbaap(dcbaa_phys)
-	log.debug(c'DCBAA setup at: %#lx', dcbaa_virt)
 }
 
 fn (mut self Xhci) setup_scratchpads(count u32) {
@@ -51,6 +50,4 @@ pub fn (mut self Xhci) setup_interrupter() {
 	ir.set_erdp(self.event_ring.phys_addr)
 	ir.set_erstba(erst_phys)
 	ir.enable()
-
-	log.debug(c'Event ring segment table: %#lx', erst_virt)
 }
