@@ -8,7 +8,7 @@ $if amd64 {
 
 pub struct Queue[T] {
 mut:
-	buf  &T
+	buf  &T = unsafe { nil }
 	mask usize
 	head usize
 	tail usize

@@ -42,7 +42,7 @@ pub fn (self Operational) write_usbsts(val u32) {
 
 pub fn (self Operational) start() {
 	val := self.read_usbcmd()
-	self.write_usbcmd(val | 1)
+	self.write_usbcmd(val | 1 | (1 << 2))
 }
 
 pub fn (self Operational) stop() {

@@ -1,5 +1,8 @@
 module pcie
 
+import arch.amd64.idt { IrqHandler }
+import log
+
 pub enum IrqType {
 	intx
 	msi
@@ -7,7 +10,7 @@ pub enum IrqType {
 }
 
 pub struct PciInterrupt {
-mut:
+pub mut:
 	irq_type     IrqType
 	base_addr    u64
 	cap_offset   u8
@@ -73,4 +76,38 @@ pub fn (self PciInterrupt) enable() {
 			header.update_command(pci_cmd_intx_disable, false)
 		}
 	}
+}
+
+pub fn (self PciInterrupt) register(handler IrqHandler, bars [6]PciBar, index u32) ?u8 {
+	vector := vector_allocator.alloc(handler) or {
+		log.error(c'Failed to allocate IRQ vector')
+		return none
+	}
+
+	msg_addr := u64(0xfee00000) | (lapic.id() << 12)
+
+	match self.irq_type {
+		.msix {
+			table := MsiXTable.new(bars[self.table_bar], self.table_offset, self.table_size)?
+			entry := table.entry(index)?
+			entry.write(msg_addr, u32(vector), false)
+			log.info(c'PCI MSI-X configured (vector: %#x)', vector)
+		}
+		.msi {
+			cap := MsiCapability{self.base_addr, self.cap_offset}
+			cap.set_address_data(msg_addr, u16(vector))
+			log.info(c'PCI MSI configured (vector: %#x)', vector)
+		}
+		.intx {
+			if index > 0 {
+				log.error(c'INTx does not support multiple vectors')
+				return none
+			}
+			ioapic.add_entry(vector, u32(self.line))
+			log.info(c'PCI INTx configured (line: %d, vector: %#x)', self.line, vector)
+		}
+	}
+
+	self.enable()
+	return vector
 }

@@ -49,13 +49,10 @@ pub fn (mut self Xhci) submit_control(args bus.ControlTransferArgs) ? {
 	status_trb := Trb.new_status_stage(status_dir_in)
 	slot.rings[1].enqueue(status_trb)
 
+	self.slots[slot_id].ctrl_chan.reset()
 	self.doorbell.ring(slot_id, 1)
 
-	evt := self.wait_event(trb_transfer_event, slot_id) or {
-		log.error(c'Control transfer timeout (slot %d)', slot_id)
-		return none
-	}
-
+	evt := self.slots[slot_id].ctrl_chan.recv()
 	code := evt.completion_code()
 	if code != 1 && code != 13 {
 		log.error(c'Control transfer failed. Code: %d', code)

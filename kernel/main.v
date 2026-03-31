@@ -54,7 +54,6 @@ pub fn main() {
 	term.init()
 
 	$if amd64 {
-		hpet.init()
 		apic.init()
 		cpu.sti()
 	}
@@ -63,7 +62,6 @@ pub fn main() {
 	usb.init()
 
 	for {
-		xhci.poll_controllers()
 		cpu.hcf()
 	}
 }

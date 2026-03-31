@@ -6,6 +6,8 @@ import idt
 import limine
 import mem
 import log
+import utils
+import driver.term
 
 const lapic_reg_id = 0x20
 const lapic_reg_eoi = 0xb0
@@ -57,6 +59,23 @@ pub fn (self Lapic) id() u64 {
 	return self.read(lapic_reg_id)
 }
 
+pub fn (self Lapic) handle_irq() {
+	term.update()
+}
+
+pub fn (self Lapic) current_vector() ?u8 {
+	for i := 7; i >= 0; i-- {
+		reg_offset := u32(0x100 + i * 0x10)
+		val := u32(self.read(reg_offset))
+		if val == 0 {
+			continue
+		}
+		highest_bit := utils.ilog2(val)
+        return u8(u32(i) * 32 + highest_bit)
+	}
+	return none
+}
+
 pub fn (mut self Lapic) init() {
 	self.x2apic_mode = mp_request.response.flags & 1 != 0
 
@@ -68,8 +87,13 @@ pub fn (mut self Lapic) init() {
 		self.base_addr = mem.phys_to_virt(lapic_addr)
 		log.info(c'Using xAPIC mode (base address: %#p)', self.base_addr)
 	}
+}
 
-	self.write(lapic_reg_timer, u64(idt.InterruptIndex.timer))
+pub fn (mut self Lapic) init_timer() {
+	timer_vector := vector_allocator.alloc(self) or {
+		log.panic(c'Failed to allocate vector for LAPIC timer')
+	}
+	self.write(lapic_reg_timer, u64(timer_vector))
 	self.write(lapic_reg_spurious, 0xff | 1 << 8)
 	self.write(lapic_reg_timer_div, 0b1011)
 

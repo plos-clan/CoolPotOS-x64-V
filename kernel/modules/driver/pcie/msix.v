@@ -32,7 +32,7 @@ pub:
 }
 
 pub fn (t MsiXTable) entry(index u32) ?MsiXTableEntry {
-	if index > t.entry_count {
+	if index >= t.entry_count {
 		return none
 	}
 	entry_addr := t.base_addr + u64(index * 16)

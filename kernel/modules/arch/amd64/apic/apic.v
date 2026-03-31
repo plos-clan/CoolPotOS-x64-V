@@ -12,6 +12,8 @@ pub fn init() {
 	disable_pic()
 	lapic.init()
 	ioapic.init()
+	hpet.init()
+	lapic.init_timer()
 }
 
 fn disable_pic() {

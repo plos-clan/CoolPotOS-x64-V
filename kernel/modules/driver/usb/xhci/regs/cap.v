@@ -53,6 +53,10 @@ pub fn (self Capability) max_ports() u8 {
 	return u8(self.hcsparams1() >> 24)
 }
 
+pub fn (self Capability) max_interrupters() u32 {
+	return (self.hcsparams1() >> 8) & 0x7ff
+}
+
 pub fn (self Capability) address_64bit() bool {
 	return (self.hccparams1() & 1) != 0
 }

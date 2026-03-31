@@ -27,11 +27,6 @@ pub mut:
 	reserved   u32
 }
 
-pub enum InterruptIndex {
-	timer = 32
-	hpet_timer
-}
-
 fn register_handler(vector u16, handler voidptr, ist u8, flags u8) {
 	address := u64(handler)
 
@@ -58,6 +53,7 @@ pub fn init() {
 		; memory
 	}
 
+	vector_allocator.init()
 	register_handler(0, &devide_by_zero, 0, 0x8e)
 	register_handler(6, &invalid_opcode, 0, 0x8e)
 	register_handler(8, &double_fault, 1, 0x8e)
@@ -65,9 +61,9 @@ pub fn init() {
 	register_handler(13, &general_protection_fault, 0, 0x8e)
 	register_handler(14, &page_fault, 0, 0x8e)
 
-	register_handler(u16(InterruptIndex.timer), &timer_handler, 0, 0x8e)
-	register_handler(u16(InterruptIndex.hpet_timer), &hpet_timer_handler, 0, 0x8e)
-
+	for index in u16(32) .. 256 {
+		register_handler(index, &irq_dispatcher, 0, 0x8e)
+	}
 	log.success(c'Interrupt Descriptor Table loaded')
 }
 

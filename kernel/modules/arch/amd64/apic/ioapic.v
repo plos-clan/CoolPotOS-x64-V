@@ -6,7 +6,7 @@ import idt
 
 const ioapic_reg_table_base = 0x10
 
-pub enum IrqVector {
+pub enum IrqPin {
 	keyboard   = 1
 	mouse      = 12
 	hpet_timer = 20
@@ -27,7 +27,7 @@ fn (self IoApic) write(reg u32, value u32) {
 	cpu.mmio_out[u32](self.base_addr + 0x10, value)
 }
 
-fn (self IoApic) add_entry(vector u8, irq u32) {
+pub fn (self IoApic) add_entry(vector u8, irq u32) {
 	ioredtbl := ioapic_reg_table_base + irq * 2
 	redirect := u64(vector) | lapic.id() << 56
 
@@ -39,6 +39,4 @@ fn (mut self IoApic) init() {
 	flags := mem.MappingType.mmio_region.flags()
 	kernel_page_table.map_range_to(ioapic_addr, 0x1000, flags)
 	self.base_addr = mem.phys_to_virt(ioapic_addr)
-
-	self.add_entry(u8(idt.InterruptIndex.hpet_timer), u8(IrqVector.hpet_timer))
 }

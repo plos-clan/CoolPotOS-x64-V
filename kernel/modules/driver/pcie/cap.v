@@ -72,6 +72,20 @@ pub fn (m MsiCapability) set_enabled(enable bool) {
 	mmio_out[u16](ctrl_addr, msg_ctrl)
 }
 
+pub fn (m MsiCapability) set_address_data(addr u64, data u16) {
+	ctrl_addr := m.base_addr + m.offset + 2
+	msg_ctrl := mmio_in[u16](ctrl_addr)
+	is_64bit := (msg_ctrl & (1 << 7)) != 0
+
+	mmio_out[u32](m.base_addr + m.offset + 4, u32(addr))
+	if is_64bit {
+		mmio_out[u32](m.base_addr + m.offset + 8, u32(addr >> 32))
+		mmio_out[u16](m.base_addr + m.offset + 12, data)
+	} else {
+		mmio_out[u16](m.base_addr + m.offset + 8, data)
+	}
+}
+
 pub struct MsixCapability {
 pub:
 	base_addr u64

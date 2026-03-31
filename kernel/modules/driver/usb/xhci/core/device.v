@@ -34,6 +34,7 @@ pub fn (mut self Xhci) address_device(port_id int, slot_id u8, speed_id u32) ? {
 	slot_ctx.set_root_hub_port(u32(port_id))
 	slot_ctx.set_route_string(0)
 	slot_ctx.set_speed(speed_id)
+	slot_ctx.set_interrupter_target(0)
 
 	mps := match speed_id {
 		defs.speed_super { u32(512) }

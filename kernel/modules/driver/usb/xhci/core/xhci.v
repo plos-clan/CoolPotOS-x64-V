@@ -3,12 +3,7 @@ module core
 import bus
 import regs
 import log
-
-$if amd64 {
-	import arch.amd64.cpu
-} $else {
-	import arch.loongarch64.cpu
-}
+import utils { Oneshot }
 
 pub struct Xhci implements bus.HostController {
 pub mut:
@@ -21,6 +16,7 @@ pub mut:
 	doorbell      regs.Doorbell
 	slots         [256]Slot
 	pending_ports [256]bool
+	cmd_chan       Oneshot[Trb]
 }
 
 pub fn Xhci.new(base_addr usize) &Xhci {
@@ -40,7 +36,7 @@ pub fn Xhci.new(base_addr usize) &Xhci {
 	return xhci
 }
 
-pub fn (mut self Xhci) poll() {
+pub fn (mut self Xhci) handle_irq() {
 	mut need_update := false
 	for _ in 0 .. 16 {
 		evt := self.event_ring.pop() or { break }
@@ -56,7 +52,6 @@ pub fn (mut self Xhci) poll() {
 		if !self.pending_ports[i] {
 			continue
 		}
-
 		self.pending_ports[i] = false
 		log.info(c'Port %d status change', i + 1)
 		mut port := regs.Port.new(self.op.base_addr, i)
@@ -102,41 +97,26 @@ fn (mut self Xhci) disable_slot(slot_id u8) {
 }
 
 fn (mut self Xhci) send_command(trb Trb) ?(u32, u8) {
+	self.cmd_chan.reset()
 	self.cmd_ring.enqueue(trb)
 	self.doorbell.ring(0, 0)
 
-	evt := self.wait_event(trb_cmd_completion, none)?
+	evt := self.cmd_chan.recv()
 	return evt.completion_code(), evt.slot_id()
-}
-
-fn (mut self Xhci) wait_event(@type u32, slot ?u8) ?Trb {
-	for _ in 0 .. 1_000_000 {
-		evt := self.event_ring.pop() or {
-			cpu.spin_hint()
-			continue
-		}
-		self.event_ring.update_erdp()
-
-		is_type_match := evt.get_type() == @type
-		is_slot_match := (slot or { evt.slot_id() } == evt.slot_id())
-
-		if is_type_match && is_slot_match {
-			return evt
-		}
-
-		self.handle_one_event(evt)
-	}
-	return none
 }
 
 fn (mut self Xhci) handle_one_event(evt Trb) {
 	match evt.get_type() {
 		trb_transfer_event {
 			slot_id := evt.slot_id()
-			code := evt.completion_code()
 			dci := evt.endpoint_id()
-			len := evt.transfer_length()
-			self.complete_transfer(slot_id, dci, code, len)
+			if dci == 1 {
+				self.slots[slot_id].ctrl_chan.send(evt)
+			} else {
+				code := evt.completion_code()
+				len := evt.transfer_length()
+				self.complete_transfer(slot_id, dci, code, len)
+			}
 		}
 		trb_port_status_change {
 			port_id := evt.param_low >> 24
@@ -145,7 +125,7 @@ fn (mut self Xhci) handle_one_event(evt Trb) {
 			}
 		}
 		trb_cmd_completion {
-			log.debug(c'Stale command completion ignored')
+			self.cmd_chan.send(evt)
 		}
 		else {
 			log.debug(c'Ignored event type %d', evt.get_type())

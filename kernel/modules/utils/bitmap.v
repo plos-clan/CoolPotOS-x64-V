@@ -1,17 +1,17 @@
-module mem
+module utils
 
 pub struct Bitmap {
-mut:
-	buffer &u8
-	length usize
+pub mut:
+	buf &u8 = unsafe { nil }
+	len usize
 }
 
-pub fn Bitmap.init(buffer &u8, size usize) Bitmap {
+pub fn Bitmap.init(buf &u8, size usize) Bitmap {
 	bitmap := Bitmap{
-		buffer: unsafe { buffer }
-		length: size * 8
+		buf: unsafe { buf }
+		len: size * 8
 	}
-	C.memset(buffer, 0, size)
+	C.memset(buf, 0, size)
 	return bitmap
 }
 
@@ -20,7 +20,7 @@ pub fn (bitmap Bitmap) get(index usize) bool {
 	bit_index := index % 8
 
 	unsafe {
-		return ((bitmap.buffer[word_index] >> bit_index) & 1) == 1
+		return ((bitmap.buf[word_index] >> bit_index) & 1) == 1
 	}
 }
 
@@ -30,15 +30,15 @@ pub fn (mut bitmap Bitmap) set(index usize, value bool) {
 
 	unsafe {
 		if value {
-			bitmap.buffer[word_index] |= (u8(1) << bit_index)
+			bitmap.buf[word_index] |= (u8(1) << bit_index)
 		} else {
-			bitmap.buffer[word_index] &= ~(u8(1) << bit_index)
+			bitmap.buf[word_index] &= ~(u8(1) << bit_index)
 		}
 	}
 }
 
 pub fn (mut bitmap Bitmap) set_range(start usize, end usize, value bool) {
-	if start >= end || start >= bitmap.length {
+	if start >= end || start >= bitmap.len {
 		return
 	}
 
@@ -57,7 +57,7 @@ pub fn (mut bitmap Bitmap) set_range(start usize, end usize, value bool) {
 		fill_value := if value { u8(-1) } else { 0 }
 		for i := start_word; i < end_word; i++ {
 			unsafe {
-				bitmap.buffer[i] = fill_value
+				bitmap.buf[i] = fill_value
 			}
 		}
 	}
@@ -67,26 +67,26 @@ pub fn (mut bitmap Bitmap) set_range(start usize, end usize, value bool) {
 	}
 }
 
-pub fn (bitmap Bitmap) find_range(length usize, value bool) ?usize {
+pub fn (bitmap Bitmap) find_range(len usize, value bool) ?usize {
 	mut count := usize(0)
 	mut start_index := usize(0)
 
 	byte_match := if value { u8(-1) } else { 0 }
 	byte_match_rev := if value { 0 } else { u8(-1) }
 
-	for byte_idx := usize(0); byte_idx < bitmap.length / 8; byte_idx++ {
-		byte_ := unsafe { bitmap.buffer[byte_idx] }
+	for byte_idx := usize(0); byte_idx < bitmap.len / 8; byte_idx++ {
+		byte_ := unsafe { bitmap.buf[byte_idx] }
 		if byte_ == byte_match_rev {
 			count = 0
 		} else if byte_ == byte_match {
-			if length < 8 {
+			if len < 8 {
 				return byte_idx * 8
 			}
 			if count == 0 {
 				start_index = byte_idx * 8
 			}
 			count += 8
-			if count >= length {
+			if count >= len {
 				return start_index
 			}
 		} else {
@@ -97,7 +97,7 @@ pub fn (bitmap Bitmap) find_range(length usize, value bool) ?usize {
 						start_index = byte_idx * 8 + bit
 					}
 					count++
-					if count == length {
+					if count == len {
 						return start_index
 					}
 				} else {

@@ -39,7 +39,11 @@ pub fn (self Hpet) set_timer(value u64) {
 	cpu.mmio_out[u64](comparator_addr, value)
 }
 
-pub fn init() {
+pub fn (self Hpet) handle_irq() {
+	log.debug(c'Hpet Timer interrupt!')
+}
+
+pub fn (self Hpet) init() {
 	flags := mem.MappingType.mmio_region.flags()
 	kernel_page_table.map_range_to(hpet_addr, 0x1000, flags)
 	hpet.base_addr = mem.phys_to_virt(hpet_addr)
@@ -59,11 +63,17 @@ pub fn init() {
 	old_config := cpu.mmio_in[u64](timer_config_addr)
 
 	route_cap := old_config >> 32
-	if (route_cap & (u64(1) << u64(apic.IrqVector.hpet_timer))) == 1 {
+	if (route_cap & (u64(1) << u64(apic.IrqPin.hpet_timer))) == 1 {
 		log.warn(c'HPET timer does not support our IRQ vector!')
 		log.warn(c'Timer route capabilities: %#032b', route_cap)
 	}
 
-	timer_config := u64(apic.IrqVector.hpet_timer) << 9 | 1 << 2
+	hpet_vector := vector_allocator.alloc(&hpet) or {
+		log.panic(c'Failed to allocate vector for HPET')
+	}
+
+	timer_config := u64(apic.IrqPin.hpet_timer) << 9 | 1 << 2
 	cpu.mmio_out[u64](timer_config_addr, timer_config)
+	ioapic.add_entry(hpet_vector, u8(apic.IrqPin.hpet_timer))
+	log.info(c'HPET Timer initialized and routed to Vector %#x', hpet_vector)
 }

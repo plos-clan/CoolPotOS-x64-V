@@ -9,7 +9,7 @@ import utils { Vec }
 
 __global xhci_controllers Vec[&core.Xhci]
 
-fn init_controller(base_addr usize) {
+fn init_controller(base_addr usize, device &pcie.PciDevice) {
 	mut xhci := core.Xhci.new(base_addr)
 	print_xhci_info(xhci)
 
@@ -30,6 +30,16 @@ fn init_controller(base_addr usize) {
 	xhci.setup_command_ring()
 	xhci.setup_interrupter()
 
+	mut intr := device.interrupt or {
+		log.error(c'xHCI controller has no interrupt')
+		return
+	}
+
+	intr.register(xhci, device.bars, 0) or {
+		log.error(c'Failed to register xHCI interrupt')
+		return
+	}
+
 	xhci.op.start()
 	log.info(c'xHCI Initialized successfully')
 
@@ -42,14 +52,7 @@ pub fn init(device &pcie.PciDevice) {
 	bar := device.bars[0]
 	flags := mem.MappingType.mmio_region.flags()
 	kernel_page_table.map_range_to(bar.address, bar.size, flags)
-
-	init_controller(mem.phys_to_virt(bar.address))
-}
-
-pub fn poll_controllers() {
-	for mut xhci in xhci_controllers.iter() {
-		xhci.poll()
-	}
+	init_controller(mem.phys_to_virt(bar.address), device)
 }
 
 fn print_xhci_info(xhci &core.Xhci) {

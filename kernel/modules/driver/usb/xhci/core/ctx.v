@@ -38,6 +38,11 @@ pub fn (mut s SlotContext) set_route_string(route u32) {
 	s.info1 |= (route & 0xfffff)
 }
 
+pub fn (mut s SlotContext) set_interrupter_target(target u32) {
+	mask := u32(0x3ff) << 22
+	s.tt_id = (s.tt_id & ~mask) | ((target & 0x3ff) << 22)
+}
+
 @[packed]
 pub struct InputControlContext {
 pub mut:

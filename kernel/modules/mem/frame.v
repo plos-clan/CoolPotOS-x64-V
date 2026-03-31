@@ -2,6 +2,7 @@
 module mem
 
 import limine
+import utils { Bitmap }
 
 @[_linker_section: '.limine_requests']
 @[cinit]

@@ -25,7 +25,6 @@ pub fn PciBar.read(base u64, index u8) ?PciBar {
 	reg_ptr := base + offset
 
 	val_low := mmio_in[u32](reg_ptr)
-
 	if val_low == 0 {
 		return none
 	}
