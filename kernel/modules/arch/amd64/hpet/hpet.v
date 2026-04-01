@@ -6,9 +6,7 @@ import cpu
 import log
 import mem
 
-__global (
-	hpet Hpet
-)
+__global hpet Hpet
 
 struct Hpet {
 mut:

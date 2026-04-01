@@ -1,9 +1,7 @@
 @[has_globals]
 module acpi
 
-__global (
-	uart_addr u64
-)
+__global uart_addr u64
 
 @[packed]
 struct Spcr {

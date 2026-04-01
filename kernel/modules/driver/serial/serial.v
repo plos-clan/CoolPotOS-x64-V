@@ -17,9 +17,7 @@ const reg_lcr = 3
 const reg_mcr = 4
 const reg_lsr = 5
 
-__global (
-	serial Serial
-)
+__global serial Serial
 
 struct Serial {
 mut:

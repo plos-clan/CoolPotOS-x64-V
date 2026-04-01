@@ -3,7 +3,7 @@ module core
 import bus
 import regs
 import log
-import utils { Oneshot }
+import sync { Oneshot }
 
 pub struct Xhci implements bus.HostController {
 pub mut:

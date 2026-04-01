@@ -1,4 +1,4 @@
-module utils
+module sync
 
 $if amd64 {
 	import arch.amd64.cpu
@@ -6,7 +6,7 @@ $if amd64 {
 	import arch.loongarch64.cpu
 }
 
-struct SpinLock {
+pub struct SpinLock {
 mut:
 	locked u32
 }

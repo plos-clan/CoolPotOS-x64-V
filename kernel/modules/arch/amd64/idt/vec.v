@@ -15,9 +15,7 @@ mut:
 	handlers [256]?IrqHandler
 }
 
-__global (
-	vector_allocator VectorAllocator
-)
+__global vector_allocator VectorAllocator
 
 fn (mut self VectorAllocator) init() {
 	self.bitmap = Bitmap.init(&self.buffer[0], 32)

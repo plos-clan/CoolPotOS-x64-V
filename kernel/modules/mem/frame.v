@@ -6,15 +6,11 @@ import utils { Bitmap }
 
 @[_linker_section: '.limine_requests']
 @[cinit]
-__global (
-	volatile memmap_request = limine.MemmapRequest{
-		response: unsafe { nil }
-	}
-)
+__global volatile memmap_request = limine.MemmapRequest{
+	response: unsafe { nil }
+}
 
-__global (
-	frame_allocator FrameAllocator
-)
+__global frame_allocator FrameAllocator
 
 struct FrameAllocator {
 mut:

@@ -1,7 +1,7 @@
 module core
 
 import bus { UsbDevice }
-import utils { Oneshot }
+import sync { Oneshot }
 
 pub struct Slot {
 pub mut:

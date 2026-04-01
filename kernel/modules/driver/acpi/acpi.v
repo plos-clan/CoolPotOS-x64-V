@@ -12,11 +12,9 @@ __global (
 
 @[_linker_section: '.limine_requests']
 @[cinit]
-__global (
-	volatile rsdp_request = limine.RsdpRequest{
-		response: unsafe { nil }
-	}
-)
+__global volatile rsdp_request = limine.RsdpRequest{
+	response: unsafe { nil }
+}
 
 @[packed]
 struct Rsdp {

@@ -20,12 +20,10 @@ const lapic_timer_freq_hz = 250
 
 @[_linker_section: '.limine_requests']
 @[cinit]
-__global (
-	volatile mp_request = limine.MpRequest{
-		response: unsafe { nil }
-		flags:    1
-	}
-)
+__global volatile mp_request = limine.MpRequest{
+	response: unsafe { nil }
+	flags:    1
+}
 
 struct Lapic {
 mut:
@@ -71,7 +69,7 @@ pub fn (self Lapic) current_vector() ?u8 {
 			continue
 		}
 		highest_bit := utils.ilog2(val)
-        return u8(u32(i) * 32 + highest_bit)
+		return u8(u32(i) * 32 + highest_bit)
 	}
 	return none
 }

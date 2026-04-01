@@ -3,9 +3,7 @@ module bus
 
 import utils { Vec }
 
-__global (
-	usb_drivers Vec[ProbeFn]
-)
+__global usb_drivers Vec[ProbeFn]
 
 pub enum TransferStatus {
 	completed

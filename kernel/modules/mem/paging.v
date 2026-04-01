@@ -27,9 +27,7 @@ $if amd64 {
 	const pte_parent_flags = 0
 }
 
-__global (
-	kernel_page_table PageMapper
-)
+__global kernel_page_table PageMapper
 
 @[packed]
 struct PageTable {

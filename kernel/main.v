@@ -8,8 +8,10 @@ import driver.pcie
 import driver.serial as _
 import driver.term
 import driver.usb
-import driver.usb.xhci
 import mem
+
+import log
+import task.async
 
 $if amd64 {
 	import arch.amd64.cpu
@@ -24,11 +26,9 @@ $if amd64 {
 
 @[_linker_section: '.limine_requests']
 @[cinit]
-__global (
-	volatile base_revision = limine.BaseRevision{
-		revision: 4
-	}
-)
+__global volatile base_revision = limine.BaseRevision{
+	revision: 4
+}
 
 pub fn main() {
 	if base_revision.revision != 0 {
@@ -61,7 +61,6 @@ pub fn main() {
 	pcie.init()
 	usb.init()
 
-	for {
-		cpu.hcf()
-	}
+	executor.init()
+	executor.run()
 }

@@ -4,9 +4,7 @@ module pcie
 import mem
 import utils { Vec }
 
-__global (
-	pci_devices Vec[PciDevice]
-)
+__global pci_devices Vec[PciDevice]
 
 pub fn init() {
 	flags := mem.MappingType.mmio_region.flags()

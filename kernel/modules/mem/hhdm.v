@@ -5,15 +5,11 @@ import limine
 
 @[_linker_section: '.limine_requests']
 @[cinit]
-__global (
-	volatile hhdm_request = limine.HhdmRequest{
-		response: unsafe { nil }
-	}
-)
+__global volatile hhdm_request = limine.HhdmRequest{
+	response: unsafe { nil }
+}
 
-__global (
-	physical_memory_offset u64
-)
+__global physical_memory_offset u64
 
 pub fn init_hhdm() {
 	physical_memory_offset = hhdm_request.response.offset

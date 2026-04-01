@@ -1,9 +1,7 @@
 @[has_globals]
 module acpi
 
-__global (
-	pci_regions PciRegions
-)
+__global pci_regions PciRegions
 
 @[packed]
 struct Mcfg {

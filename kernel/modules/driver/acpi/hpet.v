@@ -3,9 +3,7 @@ module acpi
 
 import log
 
-__global (
-	hpet_addr u64
-)
+__global hpet_addr u64
 
 @[packed]
 struct HpetInfo {
