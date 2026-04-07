@@ -12,10 +12,10 @@ pub const pci_cmd_bus_master = u16(1 << 2)
 pub const pci_cmd_intx_disable = u16(1 << 10)
 
 pub enum HeaderType {
-	endpoint       
-	pci_pci_bridge 
-	cardbus_bridge 
-	unknown        
+	endpoint
+	pci_pci_bridge
+	cardbus_bridge
+	unknown
 }
 
 pub fn HeaderType.parse(value u8) HeaderType {
@@ -135,6 +135,10 @@ pub fn (e EndpointHeader) capabilities() CapabilityIterator {
 pub struct BridgeHeader {
 pub:
 	header PciHeader
+}
+
+pub fn (b BridgeHeader) primary_bus() u8 {
+	return mmio_in[u8](b.header.base_addr + 0x18)
 }
 
 pub fn (b BridgeHeader) secondary_bus() u8 {

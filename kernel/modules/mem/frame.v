@@ -25,7 +25,7 @@ pub fn init_frame() {
 	mut memory_size := u64(0)
 	for i := memory_map.entry_count - 1; i >= 0; i-- {
 		region := unsafe { memory_map.entries[i] }
-		if region.@type == 0 {
+		if region.@type == .usable {
 			memory_size = region.base + region.length
 			break
 		}
@@ -36,7 +36,7 @@ pub fn init_frame() {
 	mut bitmap_address := u64(-1)
 	for i := 0; i < memory_map.entry_count; i++ {
 		region := unsafe { memory_map.entries[i] }
-		if region.@type == 0 && region.length >= bitmap_size {
+		if region.@type == .usable && region.length >= bitmap_size {
 			bitmap_address = region.base
 			break
 		}
@@ -51,7 +51,7 @@ pub fn init_frame() {
 	mut origin_frames := u64(0)
 	for i := 0; i < memory_map.entry_count; i++ {
 		region := unsafe { memory_map.entries[i] }
-		if region.@type == 0 {
+		if region.@type == .usable {
 			start_frame := region.base / 4096
 			frame_count := region.length / 4096
 			origin_frames += frame_count

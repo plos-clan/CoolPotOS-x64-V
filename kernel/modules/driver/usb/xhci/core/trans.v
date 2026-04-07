@@ -13,12 +13,11 @@ pub fn (mut self Xhci) submit_transfer(args bus.GeneralTransferArgs) ? {
 		return none
 	}
 
-	mut slot := &self.slots[args.slot_id]
-	mut ring := &slot.rings[dci]
+	mut ep := self.slots[args.slot_id].eps[dci]
+	ep.sem.acquire()
 
 	trb := Trb.new_normal(args.buffer_phys, args.length)
-
-	ring.enqueue(trb)
+	ep.ring.enqueue(trb)
 	self.doorbell.ring(args.slot_id, dci)
 }
 
@@ -36,23 +35,39 @@ pub fn (mut self Xhci) submit_control(args bus.ControlTransferArgs) ? {
 		else { 2 }
 	}
 
-	mut slot := &self.slots[slot_id]
+	mut ep := self.slots[slot_id].eps[1]
+
+	trb_count := if setup.length > 0 { 3 } else { 2 }
+	for _ in 0 .. trb_count {
+		ep.sem.acquire()
+	}
+
 	setup_trb := Trb.new_setup_stage(param_low, param_high, trt)
-	slot.rings[1].enqueue(setup_trb)
+	ep.ring.enqueue(setup_trb)
 
 	if setup.length > 0 {
 		data_trb := Trb.new_data_stage(args.buffer_phys, setup.length, is_in)
-		slot.rings[1].enqueue(data_trb)
+		ep.ring.enqueue(data_trb)
 	}
 
-	status_dir_in := setup.length == 0 || !is_in
-	status_trb := Trb.new_status_stage(status_dir_in)
-	slot.rings[1].enqueue(status_trb)
+	idx := ep.ring.enqueue_idx
+	ep.promises[idx].reset()
 
-	self.slots[slot_id].ctrl_chan.reset()
+	status_dir_in := setup.length == 0 || !is_in
+	ep.ring.enqueue(Trb.new_status_stage(status_dir_in))
 	self.doorbell.ring(slot_id, 1)
 
-	evt := self.slots[slot_id].ctrl_chan.recv()
+	evt := ep.promises[idx].recv() or {
+		for _ in 0 .. trb_count {
+			ep.sem.release()
+		}
+		return none
+	}
+
+	for _ in 0 .. trb_count {
+		ep.sem.release()
+	}
+
 	code := evt.completion_code()
 	if code != 1 && code != 13 {
 		log.error(c'Control transfer failed. Code: %d', code)
@@ -61,8 +76,10 @@ pub fn (mut self Xhci) submit_control(args bus.ControlTransferArgs) ? {
 }
 
 fn (mut self Xhci) complete_transfer(slot_id u8, dci u32, code u32, len u32) {
-	mut slot := &self.slots[slot_id]
+	mut ep := self.slots[slot_id].eps[dci]
+	ep.sem.release()
 
+	mut slot := &self.slots[slot_id]
 	if slot.usb_device == unsafe { nil } {
 		return
 	}

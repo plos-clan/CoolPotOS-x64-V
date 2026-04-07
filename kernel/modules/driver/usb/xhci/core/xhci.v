@@ -3,20 +3,22 @@ module core
 import bus
 import regs
 import log
-import sync { Oneshot }
+import task.async { Oneshot, Semaphore }
 
 pub struct Xhci implements bus.HostController {
 pub mut:
-	cap           regs.Capability
-	op            regs.Operational
-	ctx_size      int
-	dcbaa_virt    &u64 = unsafe { nil }
-	cmd_ring      CommandRing
-	event_ring    EventRing
-	doorbell      regs.Doorbell
-	slots         [256]Slot
-	pending_ports [256]bool
-	cmd_chan       Oneshot[Trb]
+	cap          regs.Capability
+	op           regs.Operational
+	ctx_size     int
+	dcbaa_virt   &u64 = unsafe { nil }
+	cmd_ring     CommandRing
+	event_ring   EventRing
+	doorbell     regs.Doorbell
+	slots        [256]Slot
+	port_sem     Semaphore
+	cmd_sem      Semaphore
+	cmd_promises [256]Oneshot[Trb]
+	port_to_slot [256]u8
 }
 
 pub fn Xhci.new(base_addr usize) &Xhci {
@@ -28,6 +30,9 @@ pub fn Xhci.new(base_addr usize) &Xhci {
 	xhci.cap = regs.Capability.new(base_addr)
 	op_base := usize(base_addr) + xhci.cap.length()
 	db_base := usize(base_addr) + xhci.cap.db_off()
+
+	xhci.port_sem = Semaphore.new(0)
+	xhci.cmd_sem = Semaphore.new(256)
 
 	xhci.op = regs.Operational.new(op_base)
 	xhci.doorbell = regs.Doorbell.new(db_base)
@@ -45,17 +50,6 @@ pub fn (mut self Xhci) handle_irq() {
 	}
 	if need_update {
 		self.event_ring.update_erdp()
-	}
-
-	max_ports := self.cap.max_ports()
-	for i in 0 .. max_ports {
-		if !self.pending_ports[i] {
-			continue
-		}
-		self.pending_ports[i] = false
-		log.info(c'Port %d status change', i + 1)
-		mut port := regs.Port.new(self.op.base_addr, i)
-		self.handle_port(port)
 	}
 }
 
@@ -96,12 +90,19 @@ fn (mut self Xhci) disable_slot(slot_id u8) {
 	}
 }
 
-fn (mut self Xhci) send_command(trb Trb) ?(u32, u8) {
-	self.cmd_chan.reset()
+pub fn (mut self Xhci) send_command(trb Trb) ?(u32, u8) {
+	self.cmd_sem.acquire()
+	idx := self.cmd_ring.enqueue_idx
+	self.cmd_promises[idx].reset()
+
 	self.cmd_ring.enqueue(trb)
 	self.doorbell.ring(0, 0)
 
-	evt := self.cmd_chan.recv()
+	evt := self.cmd_promises[idx].recv() or {
+		self.cmd_sem.release()
+		return none
+	}
+	self.cmd_sem.release()
 	return evt.completion_code(), evt.slot_id()
 }
 
@@ -110,22 +111,38 @@ fn (mut self Xhci) handle_one_event(evt Trb) {
 		trb_transfer_event {
 			slot_id := evt.slot_id()
 			dci := evt.endpoint_id()
-			if dci == 1 {
-				self.slots[slot_id].ctrl_chan.send(evt)
-			} else {
-				code := evt.completion_code()
-				len := evt.transfer_length()
-				self.complete_transfer(slot_id, dci, code, len)
+
+			target_phys := (u64(evt.param_high) << 32) | u64(evt.param_low)
+			mut ep := self.slots[slot_id].eps[dci]
+			if ep == unsafe { nil } {
+				return
+			}
+
+			if target_phys >= ep.ring.phys_addr {
+				idx := u32((target_phys - ep.ring.phys_addr) / sizeof(Trb))
+
+				if dci == 1 {
+					if idx < ep.ring.capacity {
+						ep.promises[idx].send(evt)
+					}
+				} else {
+					code := evt.completion_code()
+					len := evt.transfer_length()
+					self.complete_transfer(slot_id, dci, code, len)
+				}
 			}
 		}
 		trb_port_status_change {
-			port_id := evt.param_low >> 24
-			if port_id > 0 && port_id <= u32(self.cap.max_ports()) {
-				self.pending_ports[port_id - 1] = true
-			}
+			self.port_sem.release()
 		}
 		trb_cmd_completion {
-			self.cmd_chan.send(evt)
+			target_phys := (u64(evt.param_high) << 32) | u64(evt.param_low)
+			if target_phys >= self.cmd_ring.phys_addr {
+				idx := u32((target_phys - self.cmd_ring.phys_addr) / sizeof(Trb))
+				if idx < self.cmd_ring.capacity {
+					self.cmd_promises[idx].send(evt)
+				}
+			}
 		}
 		else {
 			log.debug(c'Ignored event type %d', evt.get_type())

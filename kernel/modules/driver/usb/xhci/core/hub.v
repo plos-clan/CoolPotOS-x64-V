@@ -10,18 +10,27 @@ $if amd64 {
 	import arch.loongarch64.cpu
 }
 
+pub fn xhci_hub_thread(arg voidptr) {
+	mut xhci := unsafe { &Xhci(arg) }
+	xhci.test_command_ring() or { return }
+	xhci.check_ports()
+
+	for {
+		xhci.port_sem.acquire()
+		xhci.check_ports()
+	}
+}
+
 fn (self &Xhci) wait_port_reset(port regs.Port) bool {
 	for _ in 0 .. 1_000_000 {
+		if port.is_in_reset() {
+			executor.yield()
+			continue
+		}
 		if port.has_reset_change() {
 			port.update_portsc(regs.port_prc)
-			if port.is_enabled() {
-				return true
-			}
 		}
-		if !port.is_in_reset() && port.is_enabled() {
-			return true
-		}
-		cpu.spin_hint()
+		return port.is_enabled()
 	}
 
 	log.error(c'Port %d reset timeout', port.id)
@@ -30,29 +39,33 @@ fn (self &Xhci) wait_port_reset(port regs.Port) bool {
 
 pub fn (mut self Xhci) check_ports() {
 	max_ports := self.cap.max_ports()
-	log.info(c'Scanning %d USB ports...', max_ports)
 
 	for i in 0 .. max_ports {
 		mut port := regs.Port.new(self.op.base_addr, i)
-		self.handle_port(port)
+		cold_plugged := port.is_connected() && !port.is_enabled()
+
+		if port.has_connect_change() || cold_plugged {
+			self.handle_port(port)
+		}
 	}
 }
 
 fn (mut self Xhci) handle_port(port regs.Port) {
-	if !port.is_connected() {
-		return
-	}
-
 	if port.has_connect_change() {
 		port.update_portsc(regs.port_csc)
 	}
 
-	if port.is_enabled() {
-		log.debug(c'Port %d already enabled', port.id)
-		return
-	}
+	if port.is_connected() {
+		self.attach_device(port)
+	} else {
+		log.info(c'Port %d disconnected', port.id)
+		slot_id := self.port_to_slot[port.id]
 
-	self.attach_device(port)
+		if slot_id > 0 {
+			self.cleanup_slot_on_failure(slot_id)
+			self.port_to_slot[port.id] = 0
+		}
+	}
 }
 
 fn (mut self Xhci) attach_device(port regs.Port) {
@@ -97,4 +110,6 @@ fn (mut self Xhci) setup_slot_device(port regs.Port, slot_id u8) ? {
 		self.slots[slot_id].usb_device = unsafe { nil }
 		return none
 	}
+
+	self.port_to_slot[port.id] = slot_id
 }

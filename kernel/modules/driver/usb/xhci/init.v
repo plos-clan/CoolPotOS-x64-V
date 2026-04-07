@@ -43,9 +43,8 @@ fn init_controller(base_addr usize, device &pcie.PciDevice) {
 	xhci.op.start()
 	log.info(c'xHCI Initialized successfully')
 
-	xhci.test_command_ring() or { return }
-	xhci.check_ports()
 	xhci_controllers.push(xhci)
+	executor.spawn(core.xhci_hub_thread, xhci)
 }
 
 pub fn init(device &pcie.PciDevice) {

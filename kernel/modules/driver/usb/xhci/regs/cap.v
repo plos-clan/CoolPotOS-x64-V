@@ -82,16 +82,20 @@ pub fn (self Capability) legacy_support() ?LegacySupport {
 
 pub fn (self Capability) find_ext_cap(target_id u8) ?usize {
 	mut off := self.xecp()
-	
+
 	for i := 0; off != 0 && i < 32; i++ {
 		addr := self.base_addr + usize(off)
 		hdr := mmio_in[u32](addr)
-		
-		if (hdr & 0xff) == u32(target_id) { return addr }
-		if (hdr & 0xff00) == 0 { break }
-		
+
+		if (hdr & 0xff) == u32(target_id) {
+			return addr
+		}
+		if (hdr & 0xff00) == 0 {
+			break
+		}
+
 		off += ((hdr >> 8) & 0xff) << 2
 	}
-	
+
 	return none
 }

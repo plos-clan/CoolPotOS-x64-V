@@ -34,6 +34,10 @@ pub mut:
 	stack_top u64
 }
 
+pub fn (mut r Routine) wake() {
+	executor.ready_queue.push(usize(r))
+}
+
 pub struct Executor {
 pub mut:
 	ready_queue Queue[usize]
@@ -52,10 +56,6 @@ pub fn (mut e Executor) run() {
 		e.current = unsafe { &Routine(addr) }
 		ctx.switch_to(&e.main_sp, e.current.sp)
 	}
-}
-
-pub fn (mut r Routine) wake() {
-	executor.ready_queue.push(usize(r))
 }
 
 pub fn (mut e Executor) yield() {

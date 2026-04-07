@@ -12,7 +12,6 @@ pub fn (mut self Xhci) address_device(port_id int, slot_id u8, speed_id u32) ? {
 	unsafe {
 		self.dcbaa_virt[slot_id] = u64(out_ctx_phys)
 	}
-	ep0_ring := TransferRing.new()
 	self.slots[slot_id] = Slot{
 		id:           slot_id
 		active:       true
@@ -21,7 +20,7 @@ pub fn (mut self Xhci) address_device(port_id int, slot_id u8, speed_id u32) ? {
 		out_ctx_virt: &u8(out_ctx_virt)
 		out_ctx_phys: u64(out_ctx_phys)
 	}
-	self.slots[slot_id].rings[1] = ep0_ring
+	self.slots[slot_id].eps[1] = Endpoint.new()
 
 	in_ctx_virt, in_ctx_phys := kernel_page_table.alloc_dma(1)
 	defer { kernel_page_table.dealloc_dma(in_ctx_virt, 1) }
@@ -48,6 +47,7 @@ pub fn (mut self Xhci) address_device(port_id int, slot_id u8, speed_id u32) ? {
 	ep0_ctx.set_max_burst(0)
 	ep0_ctx.set_error_count(3)
 	ep0_ctx.set_average_trb_len(8)
+	ep0_ring := &self.slots[slot_id].eps[1].ring
 	ep0_ctx.set_dequeue_ptr(ep0_ring.phys_addr | 1)
 
 	cmd := Trb.new_address_device(in_ctx_phys, slot_id)
@@ -131,8 +131,7 @@ fn (mut self Xhci) setup_one_endpoint(slot_id u8, ctx_base u64, ep &UsbEndpoint)
 		return none
 	}
 
-	mut ring := TransferRing.new()
-	self.slots[slot_id].rings[dci] = ring
+	self.slots[slot_id].eps[dci] = Endpoint.new()
 
 	attr := ep.desc.attributes & 0x3
 	ep_type := if is_in { attr + 4 } else { attr }
@@ -201,7 +200,8 @@ fn (mut self Xhci) setup_one_endpoint(slot_id u8, ctx_base u64, ep &UsbEndpoint)
 	ep_ctx.set_mult(mult)
 	ep_ctx.set_max_burst(max_burst)
 	ep_ctx.set_error_count(error_count)
-	ep_ctx.set_dequeue_ptr(ring.phys_addr | 1)
+	ep_ring := &self.slots[slot_id].eps[dci].ring
+	ep_ctx.set_dequeue_ptr(ep_ring.phys_addr | 1)
 	ep_ctx.set_max_packet_size(mps)
 	ep_ctx.set_average_trb_len(avg_trb_len)
 	ep_ctx.set_max_esit_payload(max_esit_payload)
@@ -233,8 +233,9 @@ fn (mut self Xhci) cleanup_slot_on_failure(slot_id u8) {
 	}
 
 	for i in 1 .. 32 {
-		if self.slots[slot_id].rings[i].phys_addr != 0 {
-			self.slots[slot_id].rings[i].free()
+		if self.slots[slot_id].eps[i] != unsafe { nil } {
+			self.slots[slot_id].eps[i].free()
+			self.slots[slot_id].eps[i] = unsafe { nil }
 		}
 	}
 

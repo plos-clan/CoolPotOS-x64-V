@@ -48,7 +48,7 @@ clean:
 
 kernel:
 	@mkdir -p $(BUILD_DIR)
-	@v $(VFLAGS) -o $(BUILD_DIR)/blob.c kernel
+	@/tmp/tmp-combined-vnew-20260403-4fixes/vnew $(VFLAGS) -o $(BUILD_DIR)/blob.c kernel
 	@clang $(CFLAGS) -c $(BUILD_DIR)/blob.c -o $(BUILD_DIR)/blob.o
 	@ld.lld $(BUILD_DIR)/blob.o $(LDFLAGS) -o $(BUILD_DIR)/kernel
 

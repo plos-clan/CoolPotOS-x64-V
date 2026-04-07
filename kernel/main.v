@@ -9,8 +9,6 @@ import driver.serial as _
 import driver.term
 import driver.usb
 import mem
-
-import log
 import task.async
 
 $if amd64 {
@@ -27,11 +25,11 @@ $if amd64 {
 @[_linker_section: '.limine_requests']
 @[cinit]
 __global volatile base_revision = limine.BaseRevision{
-	revision: 4
+	revision: 6
 }
 
 pub fn main() {
-	if base_revision.revision != 0 {
+	if !base_revision.is_supported() {
 		for {}
 	}
 
@@ -52,6 +50,7 @@ pub fn main() {
 
 	display.init()
 	term.init()
+	executor.init()
 
 	$if amd64 {
 		apic.init()
@@ -60,7 +59,5 @@ pub fn main() {
 
 	pcie.init()
 	usb.init()
-
-	executor.init()
 	executor.run()
 }
